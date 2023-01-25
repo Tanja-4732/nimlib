@@ -1,0 +1,17 @@
+[package]
+name = "nimlib"
+version = "0.0.0"
+edition = "2021"
+authors = ["Tanja <rust@tanja.pw>"]
+description = "A Rust library for Nim games: calculate nimbers and possible moves"
+documentation = "https://docs.rs/nimlib"
+homepage = "https://github.com/Tanja-4732/nimlib#readme"
+repository = "https://github.com/Tanja-4732/nimlib"
+license = "LGPL-3.0-or-later"
+keywords = ["nim", "nimber", "nim-game"]
+categories = ["mathematics", "game-development"]
+include = ["/src", "/Cargo.toml", "/README.md", "/LICENSE.md"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
