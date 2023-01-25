@@ -2,6 +2,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::algo;
 
+/// # A Nim game
+///
+/// This struct uses [NimRule]s to calculate the nimber of the position.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct NimGame {
     pub(crate) rules: Vec<NimRule>,
@@ -26,11 +29,22 @@ impl Default for NimGame {
 
 impl NimGame {
     pub fn new(rules: Vec<NimRule>, stacks: Vec<Stack>) -> Self {
+        // TODO allow pool coins to be set
+
         Self {
             rules,
             stacks,
             ..Default::default()
         }
+    }
+
+    /// Calculate the nimber of the position using the MEX & XOR rules
+    pub fn calculate_nimber(&self) -> u64 {
+        // FIXME handle pool coins
+
+        self.stacks.iter().fold(0, |nimber, stack| {
+            nimber ^ stack.calculate_nimber(&self.rules, 0)
+        })
     }
 }
 

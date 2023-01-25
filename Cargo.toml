@@ -15,6 +15,5 @@ include = ["/src", "/Cargo.toml", "/README.md", "/LICENSE.md"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cached = "0.42.0"
 lazy_static = "1.4.0"
 serde = { version = "1.0.152", features = ["std", "serde_derive"] }
