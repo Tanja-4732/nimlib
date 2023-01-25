@@ -2,6 +2,8 @@
 
 A Rust library for [Nim games](https://en.wikipedia.org/wiki/Nim): calculate nimbers and possible moves
 
+See the [documentation](https://docs.rs/nimlib) for more information and examples.
+
 ## License
 
 [![GNU Lesser General Public License v3.0](https://www.gnu.org/graphics/lgplv3-with-text-154x68.png)](https://www.gnu.org/licenses/lgpl-3.0.html)
