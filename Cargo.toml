@@ -1,6 +1,6 @@
 [package]
 name = "nimlib"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
 authors = ["Tanja <rust@tanja.pw>"]
 description = "A Rust library for Nim games: calculate nimbers and possible moves"

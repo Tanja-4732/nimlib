@@ -1,3 +1,11 @@
+//! The inner workings of the nimber calculation algorithms;  
+//! also contains [clear_nimber_cache], which you **may need to call yourself** (see [clear_nimber_cache])
+//!
+//! Useful if you want to calculate nimbers for heights that are not part of a game,
+//! or if you want to include just the lower-level nimber calculation algorithms in your project.
+//!
+//! Includes helper functions like [calculate_splits].
+
 use std::{collections::HashMap, sync::RwLock};
 
 use lazy_static::lazy_static;
@@ -8,11 +16,17 @@ lazy_static! {
     static ref NIMBER_CACHE: RwLock<HashMap<(u64, u64), u64>> = Default::default();
 }
 
+/// Clears the cache used by the nimber calculation algorithms.
+///
+/// This is useful if you want to calculate nimbers for a different set of rules.   
+/// Currently, the cache is not cleared automatically, leading to incorrect results
+/// if you use different rules for a stack height calculated before,
+/// either explicitly or internally.
 pub fn clear_nimber_cache() {
     NIMBER_CACHE.write().unwrap().clear();
 }
 
-/// Calculate the number of ways to split a number into two parts,
+/// Calculate all possibilities to split a number into two parts,
 /// where the sum of the parts is the original number,
 /// accounting for symmetry.
 ///
@@ -215,11 +229,11 @@ pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins
     nimber
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::Stack;
-
-    use super::*;
-
-    lazy_static! {}
-}
+// #[cfg(test)]
+// mod tests {
+//     use crate::Stack;
+//
+//     use super::*;
+//
+//     lazy_static! {}
+// }
