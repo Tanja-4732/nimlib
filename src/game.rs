@@ -1,6 +1,9 @@
 //! The primary game structs are in this module;  
 //! For game logic, see [crate::nimbers].
 
+use std::ops::Deref;
+
+use lazy_static::__Deref;
 use serde::{Deserialize, Serialize};
 
 use crate::nimbers;
@@ -174,7 +177,7 @@ pub enum NimAction {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct TakeAction {
     /// The index of the stack to take coins from
-    pub stack: usize,
+    pub stack_index: usize,
 
     /// The number of coins to take from the stack
     pub amount: u64,
