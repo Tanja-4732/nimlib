@@ -11,5 +11,6 @@
 
 pub mod algo;
 mod game;
+pub mod moves;
 
 pub use game::*;
