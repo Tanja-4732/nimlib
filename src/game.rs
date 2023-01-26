@@ -137,3 +137,73 @@ pub struct NimRule {
 //     Take(NimTakeRule),
 //     Place,
 // }
+
+/// A move in a Nim game, represented as a position and an action
+///
+/// This struct represents an action which can be taken in a specific
+/// Nim game, for a specific game state.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct NimMove {
+    /// The position the move applies to
+    pub position: NimGame,
+
+    /// The action taken for the move
+    pub action: NimAction,
+}
+
+/// A Nim move, generally represented, not connected to a position,
+/// or a specific game.
+///
+/// For example, remove 3 coins from the first stack without splitting.
+/// This does not include information about the current game state,
+/// or if a non-empty first
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub enum NimAction {
+    /// A move which takes coins from a stack, possibly splitting it
+    Take(TakeAction),
+
+    /// A move which places coins onto a stack from the player's pool
+    ///
+    /// For use with Poker-Nim
+    Place(PlaceAction),
+}
+
+/// A move which takes coins from a stack
+///
+/// (placing them into the player's pool, when used with Poker-Nim)
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct TakeAction {
+    /// The index of the stack to take coins from
+    pub stack: usize,
+
+    /// The number of coins to take from the stack
+    pub amount: u64,
+
+    /// If (and possibly how) the stack should be split after taking coins
+    pub split: NimSplit,
+}
+
+/// A move which places coins onto a stack from the player's pool
+///
+/// For use with Poker-Nim.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct PlaceAction {
+    /// The index of the stack to place coins onto
+    pub stack_index: usize,
+
+    /// The number of coins to place onto the stack,  
+    /// taken from the player's pool
+    pub amount: u64,
+}
+
+/// Represents a possible split of a stack into two non-empty stacks in a [NimAction::Take] move
+///
+/// This struct represents the resulting split (if any) of a stack after a [TakeAction] is applied.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub enum NimSplit {
+    /// The resulting stacks after a split
+    Yes(Stack, Stack),
+
+    /// The stack was not split
+    No,
+}
