@@ -4,7 +4,10 @@
 //! determining if a move is valid, and generating all possible moves
 //! for a given position.
 
-use crate::{NimAction, NimGame, NimMove, NimRule, NimSplit, PlaceAction, TakeAction};
+use crate::{
+    nimbers::calculate_splits, NimAction, NimGame, NimMove, NimRule, NimSplit, PlaceAction,
+    TakeAction,
+};
 
 /// Errors which may occur when applying a move
 pub enum MoveError {
@@ -215,10 +218,68 @@ pub unsafe fn apply_move_unchecked(game: &mut NimGame, mov: &NimMove) -> Result<
 
 /// Generate all possible (legal) moves for a given position,
 /// according to the rules of the `game`
-pub fn enumerate_moves(game: &NimGame) -> Vec<NimMove> {
+pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
     let mut moves = Vec::new();
 
-    todo!();
+    // Iterate over all stacks
+    for (s_idx, stack) in game.stacks.iter().enumerate() {
+        // Iterate over all rules
+        for rule in &game.rules {
+            match &rule.take {
+                crate::TakeSize::List(list) => todo!(),
+                crate::TakeSize::Any => {
+                    match rule.split {
+                        crate::Split::Never => {
+                            // Without split
+                            for coins in 1..=stack.0 {
+                                moves.push(NimAction::Take(TakeAction {
+                                    stack_index: s_idx,
+                                    amount: coins,
+                                    split: NimSplit::No,
+                                }));
+                            }
+                        }
+                        crate::Split::Optional => {
+                            // Without split
+                            for coins in 1..=stack.0 {
+                                moves.push(NimAction::Take(TakeAction {
+                                    stack_index: s_idx,
+                                    amount: coins,
+                                    split: NimSplit::No,
+                                }));
+                            }
+
+                            // With split
+                            for coins in 1..=(stack.0.saturating_sub(2)) {
+                                // Enumerate all possible splits
+                                for split in calculate_splits(stack.0 - coins) {
+                                    moves.push(NimAction::Take(TakeAction {
+                                        stack_index: s_idx,
+                                        amount: coins,
+                                        split: NimSplit::Yes(split.0, split.1),
+                                    }));
+                                }
+                            }
+                        }
+                        crate::Split::Always => {
+                            // With split
+                            for coins in 1..=(stack.0.saturating_sub(2)) {
+                                // Enumerate all possible splits
+                                for split in calculate_splits(stack.0 - coins) {
+                                    moves.push(NimAction::Take(TakeAction {
+                                        stack_index: s_idx,
+                                        amount: coins,
+                                        split: NimSplit::Yes(split.0, split.1),
+                                    }));
+                                }
+                            }
+                        }
+                    }
+                }
+                crate::TakeSize::Place => todo!(),
+            }
+        }
+    }
 
     moves
 }

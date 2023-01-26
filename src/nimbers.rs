@@ -10,7 +10,10 @@ use std::{collections::HashMap, sync::RwLock};
 
 use lazy_static::lazy_static;
 
-use crate::game::{NimRule, Split, TakeSize};
+use crate::{
+    game::{NimRule, Split, TakeSize},
+    Stack,
+};
 
 lazy_static! {
     static ref NIMBER_CACHE: RwLock<HashMap<(u64, u64), u64>> = Default::default();
@@ -34,17 +37,17 @@ pub fn clear_nimber_cache() {
 /// # Examples
 ///
 /// ```
-/// use nimlib::nimbers::calculate_splits;
+/// use nimlib::{nimbers::calculate_splits, Stack};
 ///
 /// assert_eq!(calculate_splits(0), vec![]);
 /// assert_eq!(calculate_splits(1), vec![]);
-/// assert_eq!(calculate_splits(2), vec![(1, 1)]);
-/// assert_eq!(calculate_splits(3), vec![(1, 2)]);
-/// assert_eq!(calculate_splits(4), vec![(1, 3), (2, 2)]);
-/// assert_eq!(calculate_splits(5), vec![(1, 4), (2, 3)]);
-/// assert_eq!(calculate_splits(6), vec![(1, 5), (2, 4), (3, 3)]);
+/// assert_eq!(calculate_splits(2), vec![(Stack(1), Stack(1))]);
+/// assert_eq!(calculate_splits(3), vec![(Stack(1), Stack(2))]);
+/// assert_eq!(calculate_splits(4), vec![(Stack(1), Stack(3)), (Stack(2), Stack(2))]);
+/// assert_eq!(calculate_splits(5), vec![(Stack(1), Stack(4)), (Stack(2), Stack(3))]);
+/// assert_eq!(calculate_splits(6), vec![(Stack(1), Stack(5)), (Stack(2), Stack(4)), (Stack(3), Stack(3))]);
 /// ```
-pub fn calculate_splits(height: u64) -> Vec<(u64, u64)> {
+pub fn calculate_splits(height: u64) -> Vec<(Stack, Stack)> {
     // Stacks of height 0 and 1 can't be split
     if height <= 1 {
         return Vec::new();
@@ -53,7 +56,7 @@ pub fn calculate_splits(height: u64) -> Vec<(u64, u64)> {
     let mut splits = Vec::new();
 
     for i in 1..=height / 2 {
-        splits.push((i, height - i));
+        splits.push((Stack(i), Stack(height - i)));
     }
 
     splits
@@ -116,8 +119,8 @@ pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins
                             Split::Optional => {
                                 for (a, b) in calculate_splits(height.saturating_sub(*take_size)) {
                                     exclusion_list.push(
-                                        calculate_nimber_for_height(a, rules, pool_coins)
-                                            ^ calculate_nimber_for_height(b, rules, pool_coins),
+                                        calculate_nimber_for_height(a.0, rules, pool_coins)
+                                            ^ calculate_nimber_for_height(b.0, rules, pool_coins),
                                     );
                                 }
 
@@ -130,8 +133,8 @@ pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins
                             Split::Always => {
                                 for (a, b) in calculate_splits(height.saturating_sub(*take_size)) {
                                     exclusion_list.push(
-                                        calculate_nimber_for_height(a, rules, pool_coins)
-                                            ^ calculate_nimber_for_height(b, rules, pool_coins),
+                                        calculate_nimber_for_height(a.0, rules, pool_coins)
+                                            ^ calculate_nimber_for_height(b.0, rules, pool_coins),
                                     );
                                 }
                             }
@@ -152,8 +155,8 @@ pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins
                         Split::Optional => {
                             for (a, b) in calculate_splits(height.saturating_sub(h)) {
                                 exclusion_list.push(
-                                    calculate_nimber_for_height(a, rules, pool_coins)
-                                        ^ calculate_nimber_for_height(b, rules, pool_coins),
+                                    calculate_nimber_for_height(a.0, rules, pool_coins)
+                                        ^ calculate_nimber_for_height(b.0, rules, pool_coins),
                                 );
                             }
 
@@ -166,8 +169,8 @@ pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins
                         Split::Always => {
                             for (a, b) in calculate_splits(height.saturating_sub(h)) {
                                 exclusion_list.push(
-                                    calculate_nimber_for_height(a, rules, pool_coins)
-                                        ^ calculate_nimber_for_height(b, rules, pool_coins),
+                                    calculate_nimber_for_height(a.0, rules, pool_coins)
+                                        ^ calculate_nimber_for_height(b.0, rules, pool_coins),
                                 );
                             }
                         }
@@ -189,8 +192,8 @@ pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins
                         Split::Optional => {
                             for (a, b) in calculate_splits(height + c) {
                                 exclusion_list.push(
-                                    calculate_nimber_for_height(a, rules, pool_coins - c)
-                                        ^ calculate_nimber_for_height(b, rules, pool_coins - c),
+                                    calculate_nimber_for_height(a.0, rules, pool_coins - c)
+                                        ^ calculate_nimber_for_height(b.0, rules, pool_coins - c),
                                 );
                             }
 
@@ -203,8 +206,8 @@ pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins
                         Split::Always => {
                             for (a, b) in calculate_splits(height + c) {
                                 exclusion_list.push(
-                                    calculate_nimber_for_height(a, rules, pool_coins - c)
-                                        ^ calculate_nimber_for_height(b, rules, pool_coins - c),
+                                    calculate_nimber_for_height(a.0, rules, pool_coins - c)
+                                        ^ calculate_nimber_for_height(b.0, rules, pool_coins - c),
                                 );
                             }
                         }
