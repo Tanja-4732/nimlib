@@ -1,8 +1,8 @@
-use nimlib::{algo, NimRule, Split, Stack, TakeSize};
+use nimlib::{nimbers, NimRule, Split, Stack, TakeSize};
 
 #[test]
 fn simple_123_game() {
-    algo::clear_nimber_cache();
+    nimbers::clear_nimber_cache();
 
     let simple_rules: Vec<NimRule> = vec![NimRule {
         take: TakeSize::List(vec![1, 2, 3]),
@@ -22,7 +22,7 @@ fn simple_123_game() {
 
 #[test]
 fn advanced_23_game() {
-    algo::clear_nimber_cache();
+    nimbers::clear_nimber_cache();
 
     let simple_rules: Vec<NimRule> = vec![NimRule {
         take: TakeSize::List(vec![2, 3]),

@@ -9,8 +9,8 @@
 #![deny(missing_docs)]
 #![warn(clippy::missing_docs_in_private_items)]
 
-pub mod algo;
 mod game;
 pub mod moves;
+pub mod nimbers;
 
 pub use game::*;

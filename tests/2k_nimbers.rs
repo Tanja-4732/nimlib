@@ -1,10 +1,10 @@
-use nimlib::{algo, NimRule, Split, Stack, TakeSize};
+use nimlib::{nimbers, NimRule, Split, Stack, TakeSize};
 
 /// Test the first 2000 nimbers of a game where the rules are:
 /// Take 1, 3, 6, or 9; must split on 6, may split on 9; never place coins.
 #[test]
 fn extended_nimber_test() {
-    algo::clear_nimber_cache();
+    nimbers::clear_nimber_cache();
 
     let fancy_rules = vec![
         NimRule {

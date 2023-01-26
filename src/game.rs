@@ -1,9 +1,9 @@
 //! The primary game structs are in this module;  
-//! For game logic, see [crate::algo].
+//! For game logic, see [crate::nimbers].
 
 use serde::{Deserialize, Serialize};
 
-use crate::algo;
+use crate::nimbers;
 
 /// # A Nim game
 ///
@@ -87,7 +87,7 @@ impl Stack {
     ///
     /// For now, `pool_coins` must be 0.
     pub fn calculate_nimber(&self, rules: impl AsRef<Vec<NimRule>>, pool_coins: u64) -> u64 {
-        algo::calculate_nimber_for_height(self.0, rules.as_ref(), pool_coins)
+        nimbers::calculate_nimber_for_height(self.0, rules.as_ref(), pool_coins)
     }
 }
 

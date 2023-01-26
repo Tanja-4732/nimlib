@@ -34,7 +34,7 @@ pub fn clear_nimber_cache() {
 /// # Examples
 ///
 /// ```
-/// use nimlib::algo::calculate_splits;
+/// use nimlib::nimbers::calculate_splits;
 ///
 /// assert_eq!(calculate_splits(0), vec![]);
 /// assert_eq!(calculate_splits(1), vec![]);
@@ -61,7 +61,7 @@ pub fn calculate_splits(height: u64) -> Vec<(u64, u64)> {
 
 // # Examples
 // ```
-// use nimlib::algo::calculate_nimber_for_height;
+// use nimlib::nimbers::calculate_nimber_for_height;
 // use nimlib::game::{NimRule, Split, TakeSize};
 //
 // let rules = vec![
