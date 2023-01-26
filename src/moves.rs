@@ -126,7 +126,55 @@ pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
     Ok(())
 }
 
-/// Calculate the resulting position after a move is applied
+/// The implementation of [`apply_move`] and [`apply_move_unchecked`]
+fn apply_move_(game: &mut NimGame, mov: &NimMove, unchecked: bool) -> Result<(), MoveError> {
+    // Assure that the move is valid
+    if !unchecked {
+        check_move(&game, &mov)?;
+    }
+
+    match &mov.action {
+        crate::NimAction::Take(TakeAction {
+            stack_index,
+            amount,
+            split,
+        }) => {
+            // Get the stack to take coins from
+            let stack = game
+                .stacks
+                .get_mut(*stack_index)
+                .ok_or(MoveError::NoSuchStack)?;
+
+            // Take coins from the stack
+            stack.0 -= amount;
+
+            // Split the coins if necessary
+            if let NimSplit::Yes(a, b) = split {
+                // Insert stacks `a` and `b` into `stacks` at position `stack_index`
+                // And remove the original stack at `stack_index`
+                game.stacks
+                    .splice(*stack_index..=*stack_index, [*a, *b].into_iter());
+            }
+        }
+        crate::NimAction::Place(PlaceAction {
+            stack_index,
+            amount,
+        }) => {
+            // Get the stack to place coins onto
+            let stack = game
+                .stacks
+                .get_mut(*stack_index)
+                .ok_or(MoveError::NoSuchStack)?;
+
+            // Place coins onto the stack
+            stack.0 += amount;
+        }
+    }
+
+    Ok(())
+}
+
+/// Applies a move to a position, if the move is valid
 ///
 /// # Arguments
 ///
@@ -135,28 +183,34 @@ pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
 ///
 /// # Returns
 ///
-/// The resulting game state after the move is applied (if valid),
-/// or an error if the move is invalid (see [MoveError])
-pub fn apply_move(game: &NimGame, mov: &NimMove) -> Result<NimGame, MoveError> {
-    let mut new_game = game.clone();
+/// [`Ok`] with the unit type if the move is valid and was applied successfully,
+/// an [`Err`] with the reason why the move is invalid otherwise (see [`MoveError`])
+pub fn apply_move(game: &mut NimGame, mov: &NimMove) -> Result<(), MoveError> {
+    apply_move_(game, mov, false)
+}
 
-    match &mov.action {
-        crate::NimAction::Take(TakeAction {
-            stack_index: stack,
-            amount,
-            split,
-        }) => {
-            todo!()
-        }
-        crate::NimAction::Place(PlaceAction {
-            stack_index,
-            amount,
-        }) => {
-            todo!()
-        }
-    }
-
-    Ok(new_game)
+/// Applies a move to a position, even if the move is invalid
+///
+/// # Arguments
+///
+/// - `game` - The game state before the move is applied
+/// - `mov` - The move to apply
+///
+/// # Returns
+///
+/// [`Ok`] with the unit type if the move is valid and was applied successfully,
+/// an [`Err`] otherwise, usually [`MoveError::NoSuchStack`] (see [`MoveError`])
+///
+/// # Safety
+///
+/// While this function does not perform _traditionally_ unsafe operations,
+/// applying moves without checking them for validity can lead to unexpected
+/// behaviour. This function is therefore marked as unsafe;
+/// but this is possibly subject to change.
+///
+/// Please note that the bounds checks of the [`Vec`] indices are not disabled by this function.
+pub unsafe fn apply_move_unchecked(game: &mut NimGame, mov: &NimMove) -> Result<(), MoveError> {
+    apply_move_(game, mov, true)
 }
 
 /// Generate all possible (legal) moves for a given position,
