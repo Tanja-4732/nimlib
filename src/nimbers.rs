@@ -1,5 +1,4 @@
-//! The inner workings of the nimber calculation algorithms;  
-//! also contains [clear_nimber_cache], which you **may need to call yourself** (see [clear_nimber_cache])
+//! The inner workings of the nimber calculation algorithm.
 //!
 //! Useful if you want to calculate nimbers for heights that are not part of a game,
 //! or if you want to include just the lower-level nimber calculation algorithms in your project.
@@ -37,18 +36,6 @@ type NimberCache = HashMap<(u64, u64), Nimber>;
 
 lazy_static! {
     static ref NIMBER_CACHE: RwLock<HashMap<Vec<NimRule>, NimberCache>> = Default::default();
-}
-
-// TODO remove this method
-/// Clears the cache used by the nimber calculation algorithms.
-///
-/// This is useful if you want to calculate nimbers for a different set of rules.   
-/// Currently, the cache is not cleared automatically, leading to incorrect results
-/// if you use different rules for a stack height calculated before,
-/// either explicitly or internally.
-#[deprecated]
-pub(crate) fn clear_nimber_cache() {
-    NIMBER_CACHE.write().unwrap().clear();
 }
 
 /// Calculate all possibilities to split a number into two parts,
@@ -101,19 +88,20 @@ pub fn calculate_splits(height: u64) -> Vec<(Stack, Stack)> {
 //    ];
 // ```
 
-macro_rules! with_cache {
-    ($rules:expr, $f:expr) => {{
-        // dbg!("inserting cache");
-        let mut caches = NIMBER_CACHE.write().unwrap();
-        let cache = if let Some(cache) = caches.get_mut($rules) {
-            cache
-        } else {
-            caches.insert($rules.clone(), Default::default());
-            caches.get_mut($rules).unwrap()
-        };
+/// Calls a function with the cache for the given rules.
+///
+/// If the cache doesn't exist yet, it is created.  
+/// The cache is locked for the duration of the function call.
+fn with_cache<T, F: FnOnce(&mut NimberCache) -> T>(rules: &Vec<NimRule>, f: F) -> T {
+    let mut caches = NIMBER_CACHE.write().unwrap();
+    let cache = if let Some(cache) = caches.get_mut(rules) {
+        cache
+    } else {
+        caches.insert(rules.clone(), Default::default());
+        caches.get_mut(rules).unwrap()
+    };
 
-        $f(cache)
-    }};
+    f(cache)
 }
 
 /// Calculate the nimber of a stack of height `height` given a set of rules
@@ -129,10 +117,7 @@ macro_rules! with_cache {
 pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins: u64) -> Nimber {
     // Check if we've already calculated this nimber
     // if let Some(nimber) = get_cache_for_rules!(rules).get(&(height, pool_coins)) {
-    if let Some(nimber) = with_cache!(rules, |cache: &NimberCache| cache
-        .get(&(height, pool_coins))
-        .map(|n| *n))
-    {
+    if let Some(nimber) = with_cache(rules, |cache| cache.get(&(height, pool_coins)).map(|n| *n)) {
         return nimber;
     }
 
@@ -265,10 +250,7 @@ pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins
     }
 
     // // Cache the nimber
-    // get_cache_for_rules!(rules).insert((height, pool_coins), nimber);
-    with_cache!(rules, |cache: &mut NimberCache| {
-        cache.insert((height, pool_coins), nimber);
-    });
+    with_cache(rules, |cache| cache.insert((height, pool_coins), nimber));
 
     nimber
 }

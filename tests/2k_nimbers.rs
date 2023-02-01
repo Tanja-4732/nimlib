@@ -1,4 +1,4 @@
-use nimlib::{nimbers, NimRule, Nimber, Split, Stack, TakeSize};
+use nimlib::{NimRule, Nimber, Split, Stack, TakeSize};
 
 /// Test the first 2000 nimbers of a game where the rules are:
 /// Take 1, 3, 6, or 9; must split on 6, may split on 9; never place coins.
