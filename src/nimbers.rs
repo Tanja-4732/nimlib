@@ -15,8 +15,10 @@ use crate::{
     Stack,
 };
 
+type NimberCache = HashMap<(u64, u64), u64>;
+
 lazy_static! {
-    static ref NIMBER_CACHE: RwLock<HashMap<(u64, u64), u64>> = Default::default();
+    static ref NIMBER_CACHE: RwLock<HashMap<Vec<NimRule>, NimberCache>> = Default::default();
 }
 
 /// Clears the cache used by the nimber calculation algorithms.
@@ -79,6 +81,16 @@ pub fn calculate_splits(height: u64) -> Vec<(Stack, Stack)> {
 //    ];
 // ```
 
+macro_rules! get_cache_for_rules {
+    ($rules:expr) => {
+        NIMBER_CACHE
+            .write()
+            .unwrap()
+            .entry($rules.clone()) // TODO allocator goes brr; consider
+            .or_insert(Default::default())
+    };
+}
+
 /// Calculate the nimber of a stack of height `height` given a set of rules
 ///
 /// `pool_coins` is the number of coins in the pool of the current player (must be 0 for now)
@@ -91,7 +103,7 @@ pub fn calculate_splits(height: u64) -> Vec<(Stack, Stack)> {
 ///
 pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins: u64) -> u64 {
     // Check if we've already calculated this nimber
-    if let Some(nimber) = NIMBER_CACHE.read().unwrap().get(&(height, pool_coins)) {
+    if let Some(nimber) = get_cache_for_rules!(rules).get(&(height, pool_coins)) {
         return *nimber;
     }
 
@@ -224,10 +236,7 @@ pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins
     }
 
     // Cache the nimber
-    NIMBER_CACHE
-        .write()
-        .unwrap()
-        .insert((height, pool_coins), nimber);
+    get_cache_for_rules!(rules).insert((height, pool_coins), nimber);
 
     nimber
 }

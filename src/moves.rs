@@ -5,8 +5,7 @@
 //! for a given position.
 
 use crate::{
-    nimbers::calculate_splits, NimAction, NimGame, NimMove, NimRule, NimSplit, PlaceAction,
-    TakeAction,
+    nimbers::calculate_splits, NimAction, NimGame, NimMove, NimSplit, PlaceAction, TakeAction,
 };
 
 /// Errors which may occur when applying a move
@@ -226,7 +225,7 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
         // Iterate over all rules
         for rule in &game.rules {
             match &rule.take {
-                crate::TakeSize::List(list) => todo!(),
+                crate::TakeSize::List(_list) => todo!(),
                 crate::TakeSize::Any => {
                     match rule.split {
                         crate::Split::Never => {

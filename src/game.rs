@@ -1,9 +1,6 @@
 //! The primary game structs are in this module;  
 //! For game logic, see [crate::nimbers].
 
-use std::ops::Deref;
-
-use lazy_static::__Deref;
 use serde::{Deserialize, Serialize};
 
 use crate::nimbers;
