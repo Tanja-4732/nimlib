@@ -117,7 +117,7 @@ fn with_cache<T, F: FnOnce(&mut NimberCache) -> T>(rules: &Vec<NimRule>, f: F) -
 pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins: u64) -> Nimber {
     // Check if we've already calculated this nimber
     // if let Some(nimber) = get_cache_for_rules!(rules).get(&(height, pool_coins)) {
-    if let Some(nimber) = with_cache(rules, |cache| cache.get(&(height, pool_coins)).map(|n| *n)) {
+    if let Some(nimber) = with_cache(rules, |cache| cache.get(&(height, pool_coins)).copied()) {
         return nimber;
     }
 
