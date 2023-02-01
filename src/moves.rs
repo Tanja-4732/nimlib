@@ -4,11 +4,16 @@
 //! determining if a move is valid, and generating all possible moves
 //! for a given position.
 
+use std::{error::Error, fmt::Display};
+
+use serde::{Deserialize, Serialize};
+
 use crate::{
     nimbers::calculate_splits, NimAction, NimGame, NimMove, NimSplit, PlaceAction, TakeAction,
 };
 
 /// Errors which may occur when applying a move
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum MoveError {
     // TODO remove `InvalidMove` and replace it with more specific errors
     /// The move is invalid for the given position
@@ -28,6 +33,20 @@ pub enum MoveError {
     /// The split is invalid for the given move under ever rule in the specified game
     InvalidSplit,
 }
+
+impl Display for MoveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MoveError::InvalidMove => write!(f, "The move is invalid for the given position"),
+            MoveError::NoSuchStack => write!(f, "The stack index is out of bounds"),
+            MoveError::NotEnoughCoins => write!(f, "The stack does not have enough coins to take"),
+            MoveError::NoSuchRule => write!(f, "No rule exists which supports the desired move"),
+            MoveError::InvalidSplit => write!(f, "The split is invalid for the given move"),
+        }
+    }
+}
+
+impl Error for MoveError {}
 
 /// Determine if a move is valid for a given position
 pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
