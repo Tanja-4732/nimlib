@@ -12,22 +12,42 @@ use lazy_static::lazy_static;
 
 use crate::{
     game::{NimRule, Split, TakeSize},
-    Stack,
+    Nimber, Stack,
 };
 
-type NimberCache = HashMap<(u64, u64), u64>;
+/// The nimber cache is a map from (height, pool_coins) to nimber.
+///
+/// It is only valid for a specific set of rules.
+///
+/// The pool coins are ignored for now, should always be 0.  
+///
+/// # Arguments
+///
+/// (the elements of the map's key-tuple)
+///
+/// - `height`: The height of the stack
+/// - `pool_coins`: The number of coins in the pool
+///
+/// # Result
+///
+/// (the value of the map)
+///
+/// - `nimber`: The nimber of the stack given its height and pool coins
+type NimberCache = HashMap<(u64, u64), Nimber>;
 
 lazy_static! {
     static ref NIMBER_CACHE: RwLock<HashMap<Vec<NimRule>, NimberCache>> = Default::default();
 }
 
+// TODO remove this method
 /// Clears the cache used by the nimber calculation algorithms.
 ///
 /// This is useful if you want to calculate nimbers for a different set of rules.   
 /// Currently, the cache is not cleared automatically, leading to incorrect results
 /// if you use different rules for a stack height calculated before,
 /// either explicitly or internally.
-pub fn clear_nimber_cache() {
+#[deprecated]
+pub(crate) fn clear_nimber_cache() {
     NIMBER_CACHE.write().unwrap().clear();
 }
 
@@ -81,14 +101,19 @@ pub fn calculate_splits(height: u64) -> Vec<(Stack, Stack)> {
 //    ];
 // ```
 
-macro_rules! get_cache_for_rules {
-    ($rules:expr) => {
-        NIMBER_CACHE
-            .write()
-            .unwrap()
-            .entry($rules.clone()) // TODO allocator goes brr; consider
-            .or_insert(Default::default())
-    };
+macro_rules! with_cache {
+    ($rules:expr, $f:expr) => {{
+        // dbg!("inserting cache");
+        let mut caches = NIMBER_CACHE.write().unwrap();
+        let cache = if let Some(cache) = caches.get_mut($rules) {
+            cache
+        } else {
+            caches.insert($rules.clone(), Default::default());
+            caches.get_mut($rules).unwrap()
+        };
+
+        $f(cache)
+    }};
 }
 
 /// Calculate the nimber of a stack of height `height` given a set of rules
@@ -101,17 +126,21 @@ macro_rules! get_cache_for_rules {
 /// integer that is not in the exclusion list.
 ///
 ///
-pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins: u64) -> u64 {
+pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins: u64) -> Nimber {
     // Check if we've already calculated this nimber
-    if let Some(nimber) = get_cache_for_rules!(rules).get(&(height, pool_coins)) {
-        return *nimber;
+    // if let Some(nimber) = get_cache_for_rules!(rules).get(&(height, pool_coins)) {
+    if let Some(nimber) = with_cache!(rules, |cache: &NimberCache| cache
+        .get(&(height, pool_coins))
+        .map(|n| *n))
+    {
+        return nimber;
     }
 
     // TODO handle pool coins correctly
     assert_eq!(pool_coins, 0, "Pool coins not yet supported");
 
     // Use the MEX (minimum excluded) rule to calculate the nimber
-    let mut exclusion_list: Vec<u64> = Vec::new();
+    let mut exclusion_list: Vec<Nimber> = Vec::new();
 
     // Calculate the nimber for each rule
     // XOR the nimbers resulting from a split
@@ -230,13 +259,16 @@ pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins
     }
 
     // Calculate the nimber using the MEX rule
-    let mut nimber = 0;
+    let mut nimber = Nimber(0);
     while exclusion_list.contains(&nimber) {
-        nimber += 1;
+        nimber.0 += 1;
     }
 
-    // Cache the nimber
-    get_cache_for_rules!(rules).insert((height, pool_coins), nimber);
+    // // Cache the nimber
+    // get_cache_for_rules!(rules).insert((height, pool_coins), nimber);
+    with_cache!(rules, |cache: &mut NimberCache| {
+        cache.insert((height, pool_coins), nimber);
+    });
 
     nimber
 }

@@ -1,11 +1,9 @@
-use nimlib::{nimbers, NimRule, Split, Stack, TakeSize};
+use nimlib::{nimbers, NimRule, Nimber, Split, Stack, TakeSize};
 
 /// Test the first 2000 nimbers of a game where the rules are:
 /// Take 1, 3, 6, or 9; must split on 6, may split on 9; never place coins.
 #[test]
 fn extended_nimber_test() {
-    nimbers::clear_nimber_cache();
-
     let fancy_rules = vec![
         NimRule {
             take: TakeSize::List(vec![1, 3]),
@@ -24,7 +22,7 @@ fn extended_nimber_test() {
     for (h, nimber) in TEST_NIMBERS.iter().enumerate() {
         assert_eq!(
             Stack(h as u64).calculate_nimber(&fancy_rules, 0),
-            *nimber as u64,
+            Nimber(*nimber as u64),
             "Nimber for height {h} is wrong"
         );
     }

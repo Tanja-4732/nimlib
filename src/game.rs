@@ -1,6 +1,11 @@
 //! The primary game structs are in this module;  
 //! For game logic, see [crate::nimbers].
 
+use std::{
+    fmt::{Debug, Display},
+    ops::BitXor,
+};
+
 use serde::{Deserialize, Serialize};
 
 use crate::nimbers;
@@ -67,10 +72,10 @@ impl NimGame {
     }
 
     /// Calculate the nimber of the position using the MEX & XOR rules
-    pub fn calculate_nimber(&self) -> u64 {
+    pub fn calculate_nimber(&self) -> Nimber {
         // FIXME handle pool coins
 
-        self.stacks.iter().fold(0, |nimber, stack| {
+        self.stacks.iter().fold(Nimber(0), |nimber, stack| {
             nimber ^ stack.calculate_nimber(&self.rules, 0)
         })
     }
@@ -86,8 +91,34 @@ impl Stack {
     /// Calculate the nimber of the stack using the MEX & XOR rules
     ///
     /// For now, `pool_coins` must be 0.
-    pub fn calculate_nimber(&self, rules: impl AsRef<Vec<NimRule>>, pool_coins: u64) -> u64 {
+    pub fn calculate_nimber(&self, rules: impl AsRef<Vec<NimRule>>, pool_coins: u64) -> Nimber {
         nimbers::calculate_nimber_for_height(self.0, rules.as_ref(), pool_coins)
+    }
+}
+
+/// A nimber.  
+/// Simply wraps a [u64].
+#[repr(transparent)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct Nimber(pub u64);
+
+impl BitXor for Nimber {
+    type Output = Nimber;
+
+    fn bitxor(self, rhs: Nimber) -> Nimber {
+        Nimber(self.0 ^ rhs.0)
+    }
+}
+
+impl Display for Nimber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "*{}", self.0)
+    }
+}
+
+impl Debug for Nimber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "*{}", self.0)
     }
 }
 
