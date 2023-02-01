@@ -244,7 +244,63 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
         // Iterate over all rules
         for rule in &game.rules {
             match &rule.take {
-                crate::TakeSize::List(_list) => todo!(),
+                crate::TakeSize::List(list) => {
+                    match rule.split {
+                        crate::Split::Never => {
+                            // Without split
+                            for coins in list {
+                                if stack.0 >= *coins {
+                                    moves.push(NimAction::Take(TakeAction {
+                                        stack_index: s_idx,
+                                        amount: *coins,
+                                        split: NimSplit::No,
+                                    }));
+                                }
+                            }
+                        }
+                        crate::Split::Optional => {
+                            // Without split
+                            for coins in list {
+                                if stack.0 >= *coins {
+                                    moves.push(NimAction::Take(TakeAction {
+                                        stack_index: s_idx,
+                                        amount: *coins,
+                                        split: NimSplit::No,
+                                    }));
+                                }
+                            }
+                            // With split
+                            for coins in list {
+                                if stack.0.saturating_sub(2) >= *coins {
+                                    // Enumerate all possible splits
+                                    for split in calculate_splits(stack.0 - *coins) {
+                                        moves.push(NimAction::Take(TakeAction {
+                                            stack_index: s_idx,
+                                            amount: *coins,
+                                            split: NimSplit::Yes(split.0, split.1),
+                                        }));
+                                    }
+                                }
+                            }
+                        }
+                        crate::Split::Always => {
+                            // With split
+                            for coins in list {
+                                if stack.0.saturating_sub(2) >= *coins {
+                                    // Enumerate all possible splits
+                                    for split in calculate_splits(stack.0 - *coins) {
+                                        moves.push(NimAction::Take(TakeAction {
+                                            stack_index: s_idx,
+                                            amount: *coins,
+                                            split: NimSplit::Yes(split.0, split.1),
+                                        }));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 crate::TakeSize::Any => {
                     match rule.split {
                         crate::Split::Never => {
@@ -294,6 +350,7 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
                         }
                     }
                 }
+
                 crate::TakeSize::Place => todo!(),
             }
         }
