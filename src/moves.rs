@@ -132,7 +132,7 @@ pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
 fn apply_move_(game: &mut NimGame, mov: &NimMove, unchecked: bool) -> Result<(), MoveError> {
     // Assure that the move is valid
     if !unchecked {
-        check_move(&game, &mov)?;
+        check_move(game, mov)?;
     }
 
     match &mov.action {

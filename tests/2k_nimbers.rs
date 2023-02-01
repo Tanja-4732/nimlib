@@ -25,8 +25,7 @@ fn extended_nimber_test() {
         assert_eq!(
             Stack(h as u64).calculate_nimber(&fancy_rules, 0),
             *nimber as u64,
-            "Nimber for height {} is wrong",
-            h
+            "Nimber for height {h} is wrong"
         );
     }
 }
