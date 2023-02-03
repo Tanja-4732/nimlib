@@ -9,8 +9,8 @@ use std::{error::Error, fmt::Display};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    nimbers::calculate_splits, NimAction, NimGame, NimMove, NimRule, NimSplit, PlaceAction,
-    TakeAction,
+    nimbers::calculate_splits, NimAction, NimGame, NimMove, NimRule, NimSplit, PlaceAction, Split,
+    TakeAction, TakeSize,
 };
 
 /// Errors which may occur when applying a move
@@ -52,7 +52,7 @@ impl Error for MoveError {}
 /// Determine if a move is valid for a given position
 pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
     match &mov.action {
-        crate::NimAction::Take(TakeAction {
+        NimAction::Take(TakeAction {
             stack_index,
             amount,
             split,
@@ -68,9 +68,9 @@ pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
 
             for rule in &game.rules {
                 let supports = match &rule.take {
-                    crate::TakeSize::List(list) => list.contains(amount),
-                    crate::TakeSize::Any => true,
-                    crate::TakeSize::Place => false,
+                    TakeSize::List(list) => list.contains(amount),
+                    TakeSize::Any => true,
+                    TakeSize::Place => false,
                 };
 
                 if supports {
@@ -92,14 +92,14 @@ pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
             let mut valid = false;
             for rule in supporting_rules {
                 match rule.split {
-                    crate::Split::Never => {
+                    Split::Never => {
                         // TODO consider replacing this with a regular if statement
                         if let NimSplit::No = split {
                             valid = true;
                             break;
                         }
                     }
-                    crate::Split::Optional => {
+                    Split::Optional => {
                         // TODO consider replacing this with a regular if statement
                         if let NimSplit::Yes(a, b) = split {
                             // FIXME replace `true` with a check if the rule allowing for the split allows taking the `amount` of coins
@@ -113,7 +113,7 @@ pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
                             break;
                         }
                     }
-                    crate::Split::Always => {
+                    Split::Always => {
                         // TODO consider replacing this with a regular if statement
                         if let NimSplit::Yes(a, b) = split {
                             // FIXME replace `true` with a check if the rule allowing for the split allows taking the `amount` of coins
@@ -131,7 +131,7 @@ pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
                 return Err(MoveError::InvalidSplit);
             }
         }
-        crate::NimAction::Place(PlaceAction {
+        NimAction::Place(PlaceAction {
             stack_index,
             amount: _,
         }) => {
@@ -156,7 +156,7 @@ fn apply_move_(game: &mut NimGame, mov: &NimMove, unchecked: bool) -> Result<(),
     }
 
     match &mov.action {
-        crate::NimAction::Take(TakeAction {
+        NimAction::Take(TakeAction {
             stack_index,
             amount,
             split,
@@ -178,7 +178,7 @@ fn apply_move_(game: &mut NimGame, mov: &NimMove, unchecked: bool) -> Result<(),
                     .splice(*stack_index..=*stack_index, [*a, *b].into_iter());
             }
         }
-        crate::NimAction::Place(PlaceAction {
+        NimAction::Place(PlaceAction {
             stack_index,
             amount,
         }) => {
@@ -245,11 +245,11 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
         // Iterate over all rules
         for NimRule { take, split } in &game.rules {
             match take {
-                crate::TakeSize::List(list) => {
+                TakeSize::List(take_sizes) => {
                     match split {
-                        crate::Split::Never => {
+                        Split::Never => {
                             // Without split
-                            for coins in list {
+                            for coins in take_sizes {
                                 if stack.0 >= *coins {
                                     moves.push(NimAction::Take(TakeAction {
                                         stack_index: s_idx,
@@ -259,9 +259,9 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
                                 }
                             }
                         }
-                        crate::Split::Optional => {
+                        Split::Optional => {
                             // Without split
-                            for coins in list {
+                            for coins in take_sizes {
                                 if stack.0 >= *coins {
                                     moves.push(NimAction::Take(TakeAction {
                                         stack_index: s_idx,
@@ -271,7 +271,7 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
                                 }
                             }
                             // With split
-                            for coins in list {
+                            for coins in take_sizes {
                                 if stack.0.saturating_sub(2) >= *coins {
                                     // Enumerate all possible splits
                                     for split in calculate_splits(stack.0 - *coins) {
@@ -284,9 +284,9 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
                                 }
                             }
                         }
-                        crate::Split::Always => {
+                        Split::Always => {
                             // With split
-                            for coins in list {
+                            for coins in take_sizes {
                                 if stack.0.saturating_sub(2) >= *coins {
                                     // Enumerate all possible splits
                                     for split in calculate_splits(stack.0 - *coins) {
@@ -302,9 +302,9 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
                     }
                 }
 
-                crate::TakeSize::Any => {
+                TakeSize::Any => {
                     match split {
-                        crate::Split::Never => {
+                        Split::Never => {
                             // Without split
                             for coins in 1..=stack.0 {
                                 moves.push(NimAction::Take(TakeAction {
@@ -314,7 +314,7 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
                                 }));
                             }
                         }
-                        crate::Split::Optional => {
+                        Split::Optional => {
                             // Without split
                             for coins in 1..=stack.0 {
                                 moves.push(NimAction::Take(TakeAction {
@@ -336,7 +336,7 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
                                 }
                             }
                         }
-                        crate::Split::Always => {
+                        Split::Always => {
                             // With split
                             for coins in 1..=(stack.0.saturating_sub(2)) {
                                 // Enumerate all possible splits
@@ -352,7 +352,7 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
                     }
                 }
 
-                crate::TakeSize::Place => todo!(),
+                TakeSize::Place => todo!(),
             }
         }
     }
