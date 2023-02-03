@@ -9,7 +9,8 @@ use std::{error::Error, fmt::Display};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    nimbers::calculate_splits, NimAction, NimGame, NimMove, NimSplit, PlaceAction, TakeAction,
+    nimbers::calculate_splits, NimAction, NimGame, NimMove, NimRule, NimSplit, PlaceAction,
+    TakeAction,
 };
 
 /// Errors which may occur when applying a move
@@ -242,10 +243,10 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
     // Iterate over all stacks
     for (s_idx, stack) in game.stacks.iter().enumerate() {
         // Iterate over all rules
-        for rule in &game.rules {
-            match &rule.take {
+        for NimRule { take, split } in &game.rules {
+            match take {
                 crate::TakeSize::List(list) => {
-                    match rule.split {
+                    match split {
                         crate::Split::Never => {
                             // Without split
                             for coins in list {
@@ -302,7 +303,7 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
                 }
 
                 crate::TakeSize::Any => {
-                    match rule.split {
+                    match split {
                         crate::Split::Never => {
                             // Without split
                             for coins in 1..=stack.0 {
