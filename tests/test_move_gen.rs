@@ -154,7 +154,7 @@ fn known_moves_split_always() {
 fn known_moves_split_optional() {
     let game = NimGame::new(
         vec![NimRule {
-            take: TakeSize::List(vec![1, 2, 3]),
+            take: TakeSize::List(vec![1, 2, 3, 7]),
             split: Split::Optional,
         }],
         vec![Stack(5)],
@@ -173,31 +173,32 @@ fn known_moves_split_optional() {
 
     assert_eq!(moves.len(), 7);
 
-    // No split
+    // Take 1
     assert_eq!(moves[0].amount, 1);
     assert_eq!(moves[0].stack_index, 0);
     assert_eq!(moves[0].split, NimSplit::No);
 
-    assert_eq!(moves[1].amount, 2);
+    assert_eq!(moves[1].amount, 1);
     assert_eq!(moves[1].stack_index, 0);
-    assert_eq!(moves[1].split, NimSplit::No);
+    assert_eq!(moves[1].split, NimSplit::Yes(Stack(1), Stack(3)));
 
-    assert_eq!(moves[2].amount, 3);
+    assert_eq!(moves[2].amount, 1);
     assert_eq!(moves[2].stack_index, 0);
-    assert_eq!(moves[2].split, NimSplit::No);
+    assert_eq!(moves[2].split, NimSplit::Yes(Stack(2), Stack(2)));
 
-    // Split
-    assert_eq!(moves[3].amount, 1);
+    // Take 2
+    assert_eq!(moves[3].amount, 2);
     assert_eq!(moves[3].stack_index, 0);
-    assert_eq!(moves[3].split, NimSplit::Yes(Stack(1), Stack(3)));
+    assert_eq!(moves[3].split, NimSplit::No);
 
-    assert_eq!(moves[4].amount, 1);
+    assert_eq!(moves[4].amount, 2);
     assert_eq!(moves[4].stack_index, 0);
-    assert_eq!(moves[4].split, NimSplit::Yes(Stack(2), Stack(2)));
+    assert_eq!(moves[4].split, NimSplit::Yes(Stack(1), Stack(2)));
 
-    assert_eq!(moves[5].amount, 2);
+    // Take 3
+    assert_eq!(moves[5].amount, 3);
     assert_eq!(moves[5].stack_index, 0);
-    assert_eq!(moves[5].split, NimSplit::Yes(Stack(1), Stack(2)));
+    assert_eq!(moves[5].split, NimSplit::No);
 
     assert_eq!(moves[6].amount, 3);
     assert_eq!(moves[6].stack_index, 0);
