@@ -57,12 +57,12 @@ lazy_static! {
 /// assert_eq!(calculate_splits(6), vec![(Stack(1), Stack(5)), (Stack(2), Stack(4)), (Stack(3), Stack(3))]);
 /// ```
 pub fn calculate_splits(height: u64) -> Vec<(Stack, Stack)> {
+    let mut splits = Vec::new();
+
     // Stacks of height 0 and 1 can't be split
     if height <= 1 {
-        return Vec::new();
+        return splits;
     }
-
-    let mut splits = Vec::new();
 
     for i in 1..=height / 2 {
         splits.push((Stack(i), Stack(height - i)));
