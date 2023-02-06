@@ -339,7 +339,26 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
                     }
                 }
 
-                TakeSize::Place => todo!(),
+                TakeSize::Place => {
+                    // The player can add 1..pool_coins coins to the stack
+                    // The placed coins are taken from the pool
+                    // FIXME only the coins of player A can be placed; this must not be hardcoded
+                    for c in 1..=game.coins_a {
+                        match split {
+                            Split::Never => {
+                                // Without split
+                                moves.push(NimAction::Place(PlaceAction {
+                                    stack_index: s_idx,
+                                    amount: c,
+                                }));
+                            }
+                            Split::Optional | Split::Always => {
+                                // TODO consider replacing this panic with a Result or improve the types themselves
+                                panic!("Split is not allowed with Place")
+                            }
+                        }
+                    }
+                }
             }
         }
     }
