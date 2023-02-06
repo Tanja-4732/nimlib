@@ -1,17 +1,16 @@
-use nimlib::{moves, NimAction, NimGame, NimRule, NimSplit, Split, Stack, TakeSize};
+use nimlib::{moves, NimAction, NimRule, NimSplit, Split, Stack, TakeSize};
 
 #[test]
 fn move_any_one() {
     for height in 0..=1000 {
-        let game = NimGame::new(
-            vec![NimRule {
-                take: TakeSize::Any,
-                split: Split::Never,
-            }],
-            vec![Stack(height)],
-        );
+        let rules = vec![NimRule {
+            take: TakeSize::Any,
+            split: Split::Never,
+        }];
 
-        let moves = moves::enumerate_moves(&game);
+        let stacks = vec![Stack(height)];
+
+        let moves = moves::calculate_legal_moves(&stacks, &rules, (0, 0));
 
         assert_eq!(moves.len(), height as usize);
     }
@@ -20,15 +19,14 @@ fn move_any_one() {
 #[test]
 fn move_any_two() {
     for height in 0..=1000 {
-        let game = NimGame::new(
-            vec![NimRule {
-                take: TakeSize::Any,
-                split: Split::Never,
-            }],
-            vec![Stack(height), Stack(height)],
-        );
+        let rules = vec![NimRule {
+            take: TakeSize::Any,
+            split: Split::Never,
+        }];
 
-        let moves = moves::enumerate_moves(&game);
+        let stacks = vec![Stack(height), Stack(height)];
+
+        let moves = moves::calculate_legal_moves(&stacks, &rules, (0, 0));
 
         assert_eq!(moves.len(), (height * 2) as usize);
     }
@@ -37,21 +35,20 @@ fn move_any_two() {
 #[test]
 fn move_any_five() {
     for height in 0..=1000 {
-        let game = NimGame::new(
-            vec![NimRule {
-                take: TakeSize::Any,
-                split: Split::Never,
-            }],
-            vec![
-                Stack(height),
-                Stack(height),
-                Stack(height),
-                Stack(height),
-                Stack(height),
-            ],
-        );
+        let rules = vec![NimRule {
+            take: TakeSize::Any,
+            split: Split::Never,
+        }];
 
-        let moves = moves::enumerate_moves(&game);
+        let stacks = vec![
+            Stack(height),
+            Stack(height),
+            Stack(height),
+            Stack(height),
+            Stack(height),
+        ];
+
+        let moves = moves::calculate_legal_moves(&stacks, &rules, (0, 0));
 
         assert_eq!(moves.len(), (height * 5) as usize);
     }
@@ -60,15 +57,14 @@ fn move_any_five() {
 #[test]
 fn move_list_one() {
     for height in 0..=1000 {
-        let game = NimGame::new(
-            vec![NimRule {
-                take: TakeSize::List(vec![1, 2, 3]),
-                split: Split::Never,
-            }],
-            vec![Stack(height)],
-        );
+        let rules = vec![NimRule {
+            take: TakeSize::List(vec![1, 2, 3]),
+            split: Split::Never,
+        }];
 
-        let moves = moves::enumerate_moves(&game);
+        let stacks = vec![Stack(height)];
+
+        let moves = moves::calculate_legal_moves(&stacks, &rules, (0, 0));
 
         assert_eq!(moves.len(), height.clamp(0, 3) as usize);
     }
@@ -76,15 +72,14 @@ fn move_list_one() {
 
 #[test]
 fn known_moves_simple() {
-    let game = NimGame::new(
-        vec![NimRule {
-            take: TakeSize::List(vec![1, 2, 3]),
-            split: Split::Never,
-        }],
-        vec![Stack(10)],
-    );
+    let rules = vec![NimRule {
+        take: TakeSize::List(vec![1, 2, 3]),
+        split: Split::Never,
+    }];
 
-    let moves = moves::enumerate_moves(&game)
+    let stacks = vec![Stack(10)];
+
+    let moves = moves::calculate_legal_moves(&stacks, &rules, (0, 0))
         .into_iter()
         .map(|mov| {
             if let NimAction::Take(take) = mov {
@@ -112,15 +107,14 @@ fn known_moves_simple() {
 
 #[test]
 fn known_moves_split_always() {
-    let game = NimGame::new(
-        vec![NimRule {
-            take: TakeSize::List(vec![1, 2, 3]),
-            split: Split::Always,
-        }],
-        vec![Stack(5)],
-    );
+    let rules = vec![NimRule {
+        take: TakeSize::List(vec![1, 2, 3]),
+        split: Split::Always,
+    }];
 
-    let moves = moves::enumerate_moves(&game)
+    let stacks = vec![Stack(5)];
+
+    let moves = moves::calculate_legal_moves(&stacks, &rules, (0, 0))
         .into_iter()
         .map(|mov| {
             if let NimAction::Take(take) = mov {
@@ -152,15 +146,14 @@ fn known_moves_split_always() {
 
 #[test]
 fn known_moves_split_optional() {
-    let game = NimGame::new(
-        vec![NimRule {
-            take: TakeSize::List(vec![1, 2, 3, 7]),
-            split: Split::Optional,
-        }],
-        vec![Stack(5)],
-    );
+    let rules = vec![NimRule {
+        take: TakeSize::List(vec![1, 2, 3, 7]),
+        split: Split::Optional,
+    }];
 
-    let moves = moves::enumerate_moves(&game)
+    let stacks = vec![Stack(5)];
+
+    let moves = moves::calculate_legal_moves(&stacks, &rules, (0, 0))
         .into_iter()
         .map(|mov| {
             if let NimAction::Take(take) = mov {
@@ -207,25 +200,24 @@ fn known_moves_split_optional() {
 
 #[test]
 fn empty_position_many_rules() {
-    let game = NimGame::new(
-        vec![
-            NimRule {
-                take: TakeSize::Any,
-                split: Split::Optional,
-            },
-            NimRule {
-                take: TakeSize::List(vec![42]),
-                split: Split::Always,
-            },
-            NimRule {
-                take: TakeSize::List(vec![1, 2, 3]),
-                split: Split::Optional,
-            },
-        ],
-        vec![Stack(0)],
-    );
+    let rules = vec![
+        NimRule {
+            take: TakeSize::Any,
+            split: Split::Optional,
+        },
+        NimRule {
+            take: TakeSize::List(vec![42]),
+            split: Split::Always,
+        },
+        NimRule {
+            take: TakeSize::List(vec![1, 2, 3]),
+            split: Split::Optional,
+        },
+    ];
 
-    let moves = moves::enumerate_moves(&game);
+    let stacks = vec![Stack(0)];
+
+    let moves = moves::calculate_legal_moves(&stacks, &rules, (0, 0));
 
     assert_eq!(moves.len(), 0);
 }

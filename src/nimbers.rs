@@ -9,10 +9,7 @@ use std::{collections::HashMap, sync::RwLock};
 
 use lazy_static::lazy_static;
 
-use crate::{
-    game::{NimRule, Split, TakeSize},
-    Nimber, Stack,
-};
+use crate::{game::NimRule, moves, NimAction, NimSplit, Nimber, PlaceAction, Stack, TakeAction};
 
 /// The nimber cache is a map from (height, pool_coins) to nimber.
 ///
@@ -127,119 +124,30 @@ pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins
     // Use the MEX (minimum excluded) rule to calculate the nimber
     let mut exclusion_list: Vec<Nimber> = Vec::new();
 
-    // Calculate the nimber for each rule
+    // Enumerate all possible moves
+    // Calculate the nimber for each possible move
     // XOR the nimbers resulting from a split
-    for NimRule { split, take } in rules {
-        match take {
-            TakeSize::List(take_sizes) => {
-                for take_size in take_sizes {
-                    if height >= *take_size {
-                        match split {
-                            Split::Never => {
-                                exclusion_list.push(calculate_nimber_for_height(
-                                    height - take_size,
-                                    rules,
-                                    pool_coins,
-                                ));
-                            }
-                            Split::Optional => {
-                                for (a, b) in calculate_splits(height.saturating_sub(*take_size)) {
-                                    exclusion_list.push(
-                                        calculate_nimber_for_height(a.0, rules, pool_coins)
-                                            ^ calculate_nimber_for_height(b.0, rules, pool_coins),
-                                    );
-                                }
-
-                                exclusion_list.push(calculate_nimber_for_height(
-                                    height - take_size,
-                                    rules,
-                                    pool_coins,
-                                ));
-                            }
-                            Split::Always => {
-                                for (a, b) in calculate_splits(height.saturating_sub(*take_size)) {
-                                    exclusion_list.push(
-                                        calculate_nimber_for_height(a.0, rules, pool_coins)
-                                            ^ calculate_nimber_for_height(b.0, rules, pool_coins),
-                                    );
-                                }
-                            }
-                        }
-                    }
+    for mov in moves::calculate_legal_moves(&vec![Stack(height)], rules, (pool_coins, 0)) {
+        match mov {
+            NimAction::Take(TakeAction {
+                stack_index: _,
+                amount: take,
+                split,
+            }) => match split {
+                NimSplit::Yes(a, b) => {
+                    let nimber_a = calculate_nimber_for_height(a.0, rules, pool_coins);
+                    let nimber_b = calculate_nimber_for_height(b.0, rules, pool_coins);
+                    exclusion_list.push(nimber_a ^ nimber_b);
                 }
-            }
-            TakeSize::Any => {
-                for h in 1..=height {
-                    match split {
-                        Split::Never => {
-                            exclusion_list.push(calculate_nimber_for_height(
-                                height - h,
-                                rules,
-                                pool_coins,
-                            ));
-                        }
-                        Split::Optional => {
-                            for (a, b) in calculate_splits(height.saturating_sub(h)) {
-                                exclusion_list.push(
-                                    calculate_nimber_for_height(a.0, rules, pool_coins)
-                                        ^ calculate_nimber_for_height(b.0, rules, pool_coins),
-                                );
-                            }
-
-                            exclusion_list.push(calculate_nimber_for_height(
-                                height - h,
-                                rules,
-                                pool_coins,
-                            ));
-                        }
-                        Split::Always => {
-                            for (a, b) in calculate_splits(height.saturating_sub(h)) {
-                                exclusion_list.push(
-                                    calculate_nimber_for_height(a.0, rules, pool_coins)
-                                        ^ calculate_nimber_for_height(b.0, rules, pool_coins),
-                                );
-                            }
-                        }
-                    }
+                NimSplit::No => {
+                    let nimber = calculate_nimber_for_height(height - take, rules, pool_coins);
+                    exclusion_list.push(nimber);
                 }
-            }
-            TakeSize::Place => {
-                // The player can add 1..pool_coins coins to the stack
-                // The placed coins are taken from the pool
-                for c in 1..=pool_coins {
-                    match split {
-                        Split::Never => {
-                            exclusion_list.push(calculate_nimber_for_height(
-                                height + c,
-                                rules,
-                                pool_coins - c,
-                            ));
-                        }
-                        Split::Optional => {
-                            for (a, b) in calculate_splits(height + c) {
-                                exclusion_list.push(
-                                    calculate_nimber_for_height(a.0, rules, pool_coins - c)
-                                        ^ calculate_nimber_for_height(b.0, rules, pool_coins - c),
-                                );
-                            }
-
-                            exclusion_list.push(calculate_nimber_for_height(
-                                height - c,
-                                rules,
-                                pool_coins - c,
-                            ));
-                        }
-                        Split::Always => {
-                            for (a, b) in calculate_splits(height + c) {
-                                exclusion_list.push(
-                                    calculate_nimber_for_height(a.0, rules, pool_coins - c)
-                                        ^ calculate_nimber_for_height(b.0, rules, pool_coins - c),
-                                );
-                            }
-                        }
-                    }
-                }
-            }
+            },
+            NimAction::Place(PlaceAction {
+                stack_index: _,
+                amount: _,
+            }) => todo!("Place action for nimber calculation"),
         }
     }
 

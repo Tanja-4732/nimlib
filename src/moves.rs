@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     nimbers::calculate_splits, NimAction, NimGame, NimMove, NimRule, NimSplit, PlaceAction, Split,
-    TakeAction, TakeSize,
+    Stack, TakeAction, TakeSize,
 };
 
 /// Errors which may occur when applying a move
@@ -236,14 +236,20 @@ pub unsafe fn apply_move_unchecked(game: &mut NimGame, mov: &NimMove) -> Result<
 }
 
 /// Generate all possible (legal) moves for a given position,
-/// according to the rules of the `game`
-pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
+/// according to the `rules` and the position described by `stacks` and `pool_coins`.
+///
+/// `pool_coins` is currently not fully implemented.
+pub fn calculate_legal_moves(
+    stacks: &Vec<Stack>,
+    rules: &Vec<NimRule>,
+    (pool_coins_a, _pool_coins_b): (u64, u64),
+) -> Vec<NimAction> {
     let mut moves = Vec::new();
 
     // Iterate over all stacks
-    for (s_idx, stack) in game.stacks.iter().enumerate() {
+    for (s_idx, stack) in stacks.iter().enumerate() {
         // Iterate over all rules
-        for NimRule { take, split } in &game.rules {
+        for NimRule { take, split } in rules {
             match take {
                 TakeSize::List(take_sizes) => {
                     for take_size in take_sizes {
@@ -343,7 +349,7 @@ pub fn enumerate_moves(game: &NimGame) -> Vec<NimAction> {
                     // The player can add 1..pool_coins coins to the stack
                     // The placed coins are taken from the pool
                     // FIXME only the coins of player A can be placed; this must not be hardcoded
-                    for c in 1..=game.coins_a {
+                    for c in 1..=pool_coins_a {
                         match split {
                             Split::Never => {
                                 // Without split
