@@ -30,6 +30,24 @@ pub struct NimGame {
     pub(crate) coins_b: u64,
 }
 
+/// Module used for debugging
+///
+/// Subject to change/removal without notice
+#[deprecated]
+pub mod debug {
+    use crate::NimGame;
+
+    /// Get shared references to `rules`, `stacks`, `coins_a`, and `coins_b`
+    ///
+    /// Subject to change/removal without notice
+    #[deprecated]
+    pub fn get_inner_values_of_game(
+        game: &NimGame,
+    ) -> (&Vec<crate::NimRule>, &Vec<crate::Stack>, u64, u64) {
+        (&game.rules, &game.stacks, game.coins_a, game.coins_b)
+    }
+}
+
 impl Default for NimGame {
     fn default() -> Self {
         Self {
@@ -174,6 +192,7 @@ pub struct NimRule {
 /// This struct represents an action which can be taken in a specific
 /// Nim game, for a specific game state.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[deprecated]
 pub struct NimMove {
     /// The position the move applies to
     pub position: NimGame,

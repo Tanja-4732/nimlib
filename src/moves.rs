@@ -53,8 +53,8 @@ impl Error for MoveError {}
 ///
 /// Returns `Ok(())` if the move is valid, or an error if the move is invalid
 /// (see [`MoveError`] for possible errors).
-pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
-    match &mov.action {
+pub fn check_move(game: &NimGame, mov: &NimAction) -> Result<(), MoveError> {
+    match mov {
         NimAction::Take(TakeAction {
             stack_index,
             amount,
@@ -152,13 +152,13 @@ pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
 }
 
 /// The implementation of [`apply_move`] and [`apply_move_unchecked`]
-fn apply_move_(game: &mut NimGame, mov: &NimMove, unchecked: bool) -> Result<(), MoveError> {
+fn apply_move_(game: &mut NimGame, mov: &NimAction, unchecked: bool) -> Result<(), MoveError> {
     // Assure that the move is valid
     if !unchecked {
         check_move(game, mov)?;
     }
 
-    match &mov.action {
+    match mov {
         NimAction::Take(TakeAction {
             stack_index,
             amount,
@@ -212,7 +212,7 @@ fn apply_move_(game: &mut NimGame, mov: &NimMove, unchecked: bool) -> Result<(),
 ///
 /// [`Ok`] with the unit type if the move is valid and was applied successfully,
 /// an [`Err`] with the reason why the move is invalid otherwise (see [`MoveError`])
-pub fn apply_move(game: &mut NimGame, mov: &NimMove) -> Result<(), MoveError> {
+pub fn apply_move(game: &mut NimGame, mov: &NimAction) -> Result<(), MoveError> {
     apply_move_(game, mov, false)
 }
 
@@ -236,7 +236,7 @@ pub fn apply_move(game: &mut NimGame, mov: &NimMove) -> Result<(), MoveError> {
 /// but this is possibly subject to change.
 ///
 /// Please note that the bounds checks of the [`Vec`] indices are not disabled by this function.
-pub unsafe fn apply_move_unchecked(game: &mut NimGame, mov: &NimMove) -> Result<(), MoveError> {
+pub unsafe fn apply_move_unchecked(game: &mut NimGame, mov: &NimAction) -> Result<(), MoveError> {
     apply_move_(game, mov, true)
 }
 
