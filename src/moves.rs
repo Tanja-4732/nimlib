@@ -50,6 +50,9 @@ impl Display for MoveError {
 impl Error for MoveError {}
 
 /// Determine if a move is valid for a given position
+///
+/// Returns `Ok(())` if the move is valid, or an error if the move is invalid
+/// (see [`MoveError`] for possible errors).
 pub fn check_move(game: &NimGame, mov: &NimMove) -> Result<(), MoveError> {
     match &mov.action {
         NimAction::Take(TakeAction {
@@ -198,6 +201,8 @@ fn apply_move_(game: &mut NimGame, mov: &NimMove, unchecked: bool) -> Result<(),
 
 /// Applies a move to a position, if the move is valid
 ///
+/// The validity of the move is checked with [`check_move`] before applying it.
+///
 /// # Arguments
 ///
 /// - `game` - The game state before the move is applied
@@ -235,10 +240,60 @@ pub unsafe fn apply_move_unchecked(game: &mut NimGame, mov: &NimMove) -> Result<
     apply_move_(game, mov, true)
 }
 
-/// Generate all possible (legal) moves for a given position,
-/// according to the `rules` and the position described by `stacks` and `pool_coins`.
+/// Generate all possible (legal) moves for a given position
 ///
-/// `pool_coins` is currently not fully implemented.
+/// # Arguments
+///
+/// - `stacks` - The stacks of coins in the position
+/// - `rules` - The rules of the game (see [`NimRule`])
+/// - `pool_coins` is currently not fully implemented.
+///
+/// # Returns
+///
+/// A [`Vec`] of all possible (legal) moves for the given position
+/// in the form of [`NimAction`]s.
+///
+/// The returned value does not reference the given `stacks` or `rules`,
+/// only the stack indices and the amount of coins to take are referenced,
+/// along with the split of coins if necessary.
+///
+/// # Example
+///
+/// ```
+/// use nimlib::{moves, NimAction, NimRule, NimSplit, Split, Stack, TakeSize};
+///
+/// let rules = vec![NimRule {
+///     take: TakeSize::List(vec![1, 2, 3]),
+///     split: Split::Never,
+/// }];
+///
+/// let stacks = vec![Stack(10)];
+///
+/// let moves = moves::calculate_legal_moves(&stacks, &rules, (0, 0))
+///     .into_iter()
+///     .map(|mov| {
+///         if let NimAction::Take(take) = mov {
+///             take
+///         } else {
+///             panic!("Expected a take action");
+///         }
+///     })
+///     .collect::<Vec<_>>();
+///
+/// assert_eq!(moves.len(), 3);
+///
+/// assert_eq!(moves[0].amount, 1);
+/// assert_eq!(moves[0].stack_index, 0);
+/// assert_eq!(moves[0].split, NimSplit::No);
+///
+/// assert_eq!(moves[1].amount, 2);
+/// assert_eq!(moves[1].stack_index, 0);
+/// assert_eq!(moves[1].split, NimSplit::No);
+///
+/// assert_eq!(moves[2].amount, 3);
+/// assert_eq!(moves[2].stack_index, 0);
+/// assert_eq!(moves[2].split, NimSplit::No);
+/// ```
 pub fn calculate_legal_moves(
     stacks: &Vec<Stack>,
     rules: &Vec<NimRule>,
