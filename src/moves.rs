@@ -9,8 +9,8 @@ use std::{error::Error, fmt::Display};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    nimbers::calculate_splits, NimAction, NimGame, NimMove, NimRule, NimSplit, PlaceAction, Split,
-    Stack, TakeAction, TakeSize,
+    nimbers::calculate_splits, NimAction, NimGame, NimRule, NimSplit, PlaceAction, Split, Stack,
+    TakeAction, TakeSize,
 };
 
 /// Errors which may occur when applying a move
