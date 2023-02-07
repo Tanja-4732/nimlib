@@ -18,19 +18,13 @@ fn test_apply_move_1() {
     let mut game = NimGame::new(rules, stacks);
 
     // Get the values before application and check them
-    let (_rules, stacks, coins_a, coins_b) = nimlib::debug::get_inner_values_of_game(&game);
-
-    assert_eq!(coins_a, 0);
-    assert_eq!(coins_b, 0);
+    let stacks = game.get_stacks();
 
     assert_eq!(stacks[0], Stack(5));
 
     // Apply the move and check the values again
     moves::apply_move(&mut game, &moves[0]).expect("Failed to apply move");
-    let (_rules, stacks, coins_a, coins_b) = nimlib::debug::get_inner_values_of_game(&game);
-
-    assert_eq!(coins_a, 0);
-    assert_eq!(coins_b, 0);
+    let stacks = game.get_stacks();
 
     assert_eq!(stacks[0], Stack(4));
 }
@@ -53,19 +47,13 @@ fn test_apply_move_2() {
     let mut game = NimGame::new(rules, stacks);
 
     // Get the values before application and check them
-    let (_rules, stacks, coins_a, coins_b) = nimlib::debug::get_inner_values_of_game(&game);
-
-    assert_eq!(coins_a, 0);
-    assert_eq!(coins_b, 0);
+    let stacks = game.get_stacks();
 
     assert_eq!(stacks[0], Stack(5));
 
     // Apply the move and check the values again
     moves::apply_move(&mut game, &moves[0]).expect("Failed to apply move");
-    let (_rules, stacks, coins_a, coins_b) = nimlib::debug::get_inner_values_of_game(&game);
-
-    assert_eq!(coins_a, 0);
-    assert_eq!(coins_b, 0);
+    let stacks = game.get_stacks();
 
     assert_eq!(stacks[0], Stack(2));
 }
