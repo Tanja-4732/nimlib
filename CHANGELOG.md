@@ -29,6 +29,18 @@
   - Same goes for its `rules` argument, which was moved from `&Vec<NimRule>` to `&[NimRule]`
 - Changed return type of `nimbers::calculate_splits` `Vec<(u64, u64)>` from to `Vec<(Stack, Stack)>`
 
+### Removed
+
+- Removed `clear_nimber_cache` from `nimbers` (then named `algo`)
+  - The cache now supports multiple rule sets, so clearing the cache is no longer necessary when the rules change
+  - Maybe some kind of cache control will be added in the future to reduce memory usage on demand
+
+### Fixed
+
+- Fixed a bug in the way the cache was used, which resulted in incorrect nimbers being returned
+  - This was due to the fact that the same cache was used for every rule set
+  - Now, a new cache is created for every rule set
+
 ## [0.0.1] - 2023-01-25
 
 ### Added
