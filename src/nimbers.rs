@@ -89,12 +89,12 @@ pub fn calculate_splits(height: u64) -> Vec<(Stack, Stack)> {
 ///
 /// If the cache doesn't exist yet, it is created.  
 /// The cache is locked for the duration of the function call.
-fn with_cache<T, F: FnOnce(&mut NimberCache) -> T>(rules: &Vec<NimRule>, f: F) -> T {
+fn with_cache<T, F: FnOnce(&mut NimberCache) -> T>(rules: &[NimRule], f: F) -> T {
     let mut caches = NIMBER_CACHE.write().unwrap();
     let cache = if let Some(cache) = caches.get_mut(rules) {
         cache
     } else {
-        caches.insert(rules.clone(), Default::default());
+        caches.insert(rules.to_vec(), Default::default());
         caches.get_mut(rules).unwrap()
     };
 
@@ -111,7 +111,7 @@ fn with_cache<T, F: FnOnce(&mut NimberCache) -> T>(rules: &Vec<NimRule>, f: F) -
 /// integer that is not in the exclusion list.
 ///
 ///
-pub fn calculate_nimber_for_height(height: u64, rules: &Vec<NimRule>, pool_coins: u64) -> Nimber {
+pub fn calculate_nimber_for_height(height: u64, rules: &[NimRule], pool_coins: u64) -> Nimber {
     // Check if we've already calculated this nimber
     // if let Some(nimber) = get_cache_for_rules!(rules).get(&(height, pool_coins)) {
     if let Some(nimber) = with_cache(rules, |cache| cache.get(&(height, pool_coins)).copied()) {
