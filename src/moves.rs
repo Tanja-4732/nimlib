@@ -295,7 +295,7 @@ pub unsafe fn apply_move_unchecked(game: &mut NimGame, mov: &NimAction) -> Resul
 /// assert_eq!(moves[2].split, NimSplit::No);
 /// ```
 pub fn calculate_legal_moves(
-    stacks: &Vec<Stack>,
+    stacks: &[Stack],
     rules: &[NimRule],
     (pool_coins_a, _pool_coins_b): (u64, u64),
 ) -> Vec<NimAction> {

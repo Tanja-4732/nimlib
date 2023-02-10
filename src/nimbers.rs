@@ -127,7 +127,7 @@ pub fn calculate_nimber_for_height(height: u64, rules: &[NimRule], pool_coins: u
     // Enumerate all possible moves
     // Calculate the nimber for each possible move
     // XOR the nimbers resulting from a split
-    for mov in moves::calculate_legal_moves(&vec![Stack(height)], rules, (pool_coins, 0)) {
+    for mov in moves::calculate_legal_moves(&[Stack(height)], rules, (pool_coins, 0)) {
         match mov {
             NimAction::Take(TakeAction {
                 stack_index: _,
