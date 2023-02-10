@@ -24,6 +24,9 @@
   - Now returns a `Nimber` instead of a `u64`
   - Now takes a slice of `NimRule` instead of a hard-coded vector `&Vec<NimRule>`
   - Moved internal code to `moves::calculate_legal_moves` (code deduplication)
+- Function `calculate_legal_moves`
+  - Argument `stacks` was moved from `&Vec<Stack>` to `&[Stack]`, allowing for an optimization in this `calculate_nimber_for_height`
+  - Same goes for its `rules` argument, which was moved from `&Vec<NimRule>` to `&[NimRule]`
 - Changed return type of `nimbers::calculate_splits` `Vec<(u64, u64)>` from to `Vec<(Stack, Stack)>`
 
 ## [0.0.1] - 2023-01-25
