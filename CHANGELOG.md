@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+_No unreleased changes_
+
+## [0.1.0] - 2023-02-11
+
 ### Added
 
 - Module `moves`

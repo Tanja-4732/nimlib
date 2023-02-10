@@ -1,7 +1,6 @@
 use nimlib::{moves, NimGame, NimRule, Split, Stack, TakeSize};
 
 #[test]
-#[allow(deprecated)]
 fn test_apply_move_1() {
     let rules = vec![NimRule {
         take: TakeSize::List(vec![1, 2, 3]),
@@ -30,7 +29,6 @@ fn test_apply_move_1() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn test_apply_move_2() {
     let rules = vec![NimRule {
         take: TakeSize::List(vec![3]),
