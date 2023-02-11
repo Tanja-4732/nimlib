@@ -4,6 +4,15 @@
 
 _No unreleased changes_
 
+## [0.1.1] - 2023-02-11
+
+### Changed
+
+- Improved readme and documentation
+  - Fix links: link to _latest_ to help search engines find the latest version
+  - Add a description of the library to the readme
+  - Explain how Nim games work
+
 ## [0.1.0] - 2023-02-11
 
 ### Added
