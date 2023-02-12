@@ -2,7 +2,12 @@
 
 ## [Unreleased]
 
-_No unreleased changes_
+<!-- _No unreleased changes_ -->
+
+### Added
+
+- CLI to access library functions
+  - Calculate splits
 
 ## [0.1.1] - 2023-02-11
 

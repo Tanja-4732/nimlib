@@ -17,3 +17,6 @@ include = ["/src", "/Cargo.toml", "/README.md", "/LICENSE.md"]
 [dependencies]
 lazy_static = "1.4.0"
 serde = { version = "1.0.152", features = ["std", "serde_derive"] }
+
+# Dependencies for the CLI
+clap = { version = "4.1.4", features = ["derive", "wrap_help"] }
