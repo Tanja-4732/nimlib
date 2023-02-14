@@ -10,8 +10,15 @@ struct Cli {
 
 #[derive(clap::Subcommand)]
 enum Action {
+    #[command(about = "Calculate the nimber for a pile of given height")]
     Nimber,
-    Splits { height: u64 },
+    #[command(about = "Calculate all possible splits for a given height")]
+    Splits {
+        #[arg(help = "Height of the stack to calculate splits for")]
+        height: u64,
+        #[arg(short, long, help = "Output as CSV")]
+        csv: bool,
+    },
 }
 
 pub fn main() {
@@ -22,8 +29,16 @@ pub fn main() {
             // let nimber = nimlib::nimbers::calculate_nimber_for_height(h);
             println!("")
         }
-        Action::Splits { height } => {
+        Action::Splits { height, csv } => {
             let splits = nimlib::nimbers::calculate_splits(height);
+
+            if csv {
+                println!("left,right");
+                for (Stack(left), Stack(right)) in splits {
+                    println!("{},{}", left, right);
+                }
+                return;
+            }
 
             if splits.len() == 0 {
                 println!("No splits for height {}", height);

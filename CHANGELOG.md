@@ -7,7 +7,9 @@
 ### Added
 
 - CLI to access library functions
-  - Calculate splits
+- CLI: Calculate splits for a given height (with the `splits` subcommand)
+  - As formatted text (default)
+  - As CSV (with the `--csv` flag or `-c` short flag)
 
 ## [0.1.1] - 2023-02-11
 
