@@ -19,6 +19,13 @@ enum Action {
         #[arg(short, long, help = "Output as CSV")]
         csv: bool,
     },
+    #[command(about = "Create a JSON rule set using CLI parameters")]
+    MakeRuleSet {
+        #[arg(long)]
+        take: Vec<u64>,
+        #[arg(long)]
+        allow_split: bool,
+    },
 }
 
 pub fn main() {
@@ -53,6 +60,9 @@ pub fn main() {
             for (Stack(left), Stack(right)) in splits {
                 println!("{left:max_digits_left$} + {right:max_digits_right$}");
             }
+        }
+        Action::MakeRuleSet { take, allow_split } => {
+            dbg!(allow_split, take);
         }
     }
 }
