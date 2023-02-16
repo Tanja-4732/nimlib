@@ -62,7 +62,17 @@ pub fn main() {
             }
         }
         Action::MakeRuleSet { take, allow_split } => {
-            dbg!(allow_split, take);
+            dbg!(&allow_split, &take);
+
+            let rule_set = nimlib::NimRule {
+                take: nimlib::TakeSize::List(take),
+                split: allow_split.into(),
+            };
+
+            println!(
+                "Made rule set:\n{}",
+                serde_json::to_string_pretty(&rule_set).unwrap()
+            );
         }
     }
 }

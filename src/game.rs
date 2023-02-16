@@ -144,6 +144,16 @@ pub enum Split {
     Always,
 }
 
+impl From<bool> for Split {
+    fn from(b: bool) -> Self {
+        if b {
+            Split::Always
+        } else {
+            Split::Never
+        }
+    }
+}
+
 /// Specifies the number of coins that can be taken from a stack in a single move according to a rule.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum TakeSize {
