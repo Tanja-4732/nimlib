@@ -9,8 +9,7 @@
 //! nimlib make-rule-set --help
 //! ```
 
-#![deny(missing_docs)]
-#![warn(clippy::missing_docs_in_private_items)]
+#![deny(missing_docs, clippy::missing_docs_in_private_items)]
 
 use clap::{Args, Parser};
 use nimlib::{nimbers, NimRule, Split, Stack, TakeSize};
@@ -25,11 +24,20 @@ struct Cli {
 #[derive(clap::Subcommand)]
 enum Action {
     #[command(about = "Calculate the nimber for a pile of given height")]
-    Nimber,
+    Nimber {
+        #[arg(help = "Height of the stacks of a position to calculate the nimber for")]
+        heights: Vec<u64>,
+
+        // #[arg(long, short = 'r', help = "Use the rules from the given JSON file")]
+        // rules_file: Option<String>,
+        #[arg(long, short = 'r', help = "Use the rules from the given JSON string")]
+        rules: String,
+    },
     #[command(about = "Calculate all possible splits for a given height")]
     Splits {
         #[arg(help = "Height of the stack to calculate splits for")]
         height: u64,
+
         #[arg(short, long, help = "Output as CSV")]
         csv: bool,
     },
@@ -70,8 +78,8 @@ struct MakeRuleSet {
 pub fn main() {
     let args = Cli::parse();
     match args.action {
-        Action::Nimber => {
-            println!()
+        Action::Nimber { heights, rules } => {
+            dbg!(&heights, &rules);
         }
         Action::Splits { height, csv } => {
             let splits = nimbers::calculate_splits(height);
@@ -158,14 +166,13 @@ pub fn main() {
                 });
             }
 
-            println!(
-                "Made rule set:\n{}",
-                if pretty_print {
-                    serde_json::to_string_pretty(&rule_set).unwrap()
-                } else {
-                    serde_json::to_string(&rule_set).unwrap()
-                }
-            );
+            let rules = if pretty_print {
+                serde_json::to_string_pretty(&rule_set).unwrap()
+            } else {
+                serde_json::to_string(&rule_set).unwrap()
+            };
+
+            println!("{rules}");
         }
     }
 }
