@@ -48,7 +48,7 @@ pub fn main() {
     let args = Cli::parse();
     match args.action {
         Action::Nimber => {
-            println!("")
+            println!()
         }
         Action::Splits { height, csv } => {
             let splits = nimbers::calculate_splits(height);
@@ -56,13 +56,13 @@ pub fn main() {
             if csv {
                 println!("left,right");
                 for (Stack(left), Stack(right)) in splits {
-                    println!("{},{}", left, right);
+                    println!("{left},{right}");
                 }
                 return;
             }
 
-            if splits.len() == 0 {
-                println!("No splits for height {}", height);
+            if splits.is_empty() {
+                println!("No splits for height {height}");
                 return;
             }
 
