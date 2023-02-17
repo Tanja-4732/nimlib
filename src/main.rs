@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Args, Parser};
 use nimlib::{nimbers, NimRule, Split, Stack, TakeSize};
 
 #[derive(clap::Parser)]
@@ -20,25 +20,28 @@ enum Action {
         csv: bool,
     },
     #[command(about = "Create a JSON rule set using CLI parameters")]
-    MakeRuleSet {
-        #[arg(long, short = 'n')]
-        take_split_never: Vec<u64>,
+    MakeRuleSet(MakeRuleSet),
+}
 
-        #[arg(long, short = 'o')]
-        take_split_optional: Vec<u64>,
+#[derive(Args)]
+struct MakeRuleSet {
+    #[arg(long, short = 'n')]
+    take_split_never: Vec<u64>,
 
-        #[arg(long, short = 'a')]
-        take_split_always: Vec<u64>,
+    #[arg(long, short = 'o')]
+    take_split_optional: Vec<u64>,
 
-        #[arg(long, short = 's')]
-        allow_any_take: Vec<Split>,
+    #[arg(long, short = 'a')]
+    take_split_always: Vec<u64>,
 
-        #[arg(long, short = 'p')]
-        allow_place: bool,
+    #[arg(long, short = 's')]
+    allow_any_take: Vec<Split>,
 
-        #[arg(long, short = 'P')]
-        pretty_print: bool,
-    },
+    #[arg(long, short = 'p')]
+    allow_place: bool,
+
+    #[arg(long, short = 'P')]
+    pretty_print: bool,
 }
 
 pub fn main() {
@@ -72,14 +75,14 @@ pub fn main() {
                 println!("{left:max_digits_left$} + {right:max_digits_right$}");
             }
         }
-        Action::MakeRuleSet {
+        Action::MakeRuleSet(MakeRuleSet {
             take_split_never,
             take_split_optional,
             take_split_always,
             allow_any_take,
             allow_place,
             pretty_print,
-        } => {
+        }) => {
             let mut rule_set: Vec<NimRule> = Default::default();
 
             if !take_split_never.is_empty() {
