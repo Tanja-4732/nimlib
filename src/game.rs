@@ -6,6 +6,7 @@ use std::{
     ops::BitXor,
 };
 
+use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
 use crate::nimbers;
@@ -132,7 +133,9 @@ impl Debug for Nimber {
 }
 
 /// Specifies if a player may/must split a stack into two non-empty stacks after taking coins
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, ValueEnum,
+)]
 pub enum Split {
     /// Splitting the stack is not allowed
     Never,
@@ -161,9 +164,11 @@ pub enum TakeSize {
     /// if enough coins are available.
     ///
     /// E.g. `[1, 2, 3]`, `[3, 6, 10]`, or `[42]`
+    #[serde(rename = "TakeList")]
     List(Vec<u64>),
 
     /// Any number of coins less than or equal to the stack height may be taken.
+    #[serde(rename = "TakeAny")]
     Any,
 
     /// The player may place coins into the stack from their pool (none are taken),  
@@ -176,6 +181,7 @@ pub enum TakeSize {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct NimRule {
     /// Specifies the number of coins that can be taken from a stack in a single move
+    #[serde(rename = "rule")]
     pub take: TakeSize,
 
     /// Specifies whether the player may/must split a stack into two stacks

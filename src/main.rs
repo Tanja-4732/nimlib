@@ -1,5 +1,5 @@
 use clap::Parser;
-use nimlib::Stack;
+use nimlib::{nimbers, NimRule, Split, Stack, TakeSize};
 
 #[derive(clap::Parser)]
 #[command(about = "A Nim-game CLI", long_about = None)]
@@ -21,10 +21,23 @@ enum Action {
     },
     #[command(about = "Create a JSON rule set using CLI parameters")]
     MakeRuleSet {
-        #[arg(long)]
-        take: Vec<u64>,
-        #[arg(long)]
-        allow_split: bool,
+        #[arg(long, short = 'n')]
+        take_split_never: Vec<u64>,
+
+        #[arg(long, short = 'o')]
+        take_split_optional: Vec<u64>,
+
+        #[arg(long, short = 'a')]
+        take_split_always: Vec<u64>,
+
+        #[arg(long, short = 's')]
+        allow_any_take: Vec<Split>,
+
+        #[arg(long, short = 'p')]
+        allow_place: bool,
+
+        #[arg(long, short = 'P')]
+        pretty_print: bool,
     },
 }
 
@@ -32,12 +45,10 @@ pub fn main() {
     let args = Cli::parse();
     match args.action {
         Action::Nimber => {
-            // Action::CalculateNimber(h) => {
-            // let nimber = nimlib::nimbers::calculate_nimber_for_height(h);
             println!("")
         }
         Action::Splits { height, csv } => {
-            let splits = nimlib::nimbers::calculate_splits(height);
+            let splits = nimbers::calculate_splits(height);
 
             if csv {
                 println!("left,right");
@@ -61,17 +72,74 @@ pub fn main() {
                 println!("{left:max_digits_left$} + {right:max_digits_right$}");
             }
         }
-        Action::MakeRuleSet { take, allow_split } => {
-            dbg!(&allow_split, &take);
+        Action::MakeRuleSet {
+            take_split_never,
+            take_split_optional,
+            take_split_always,
+            allow_any_take,
+            allow_place,
+            pretty_print,
+        } => {
+            let mut rule_set: Vec<NimRule> = Default::default();
 
-            let rule_set = nimlib::NimRule {
-                take: nimlib::TakeSize::List(take),
-                split: allow_split.into(),
-            };
+            if !take_split_never.is_empty() {
+                rule_set.push(NimRule {
+                    take: TakeSize::List(take_split_never),
+                    split: Split::Never,
+                });
+            }
+
+            if !take_split_optional.is_empty() {
+                rule_set.push(NimRule {
+                    take: TakeSize::List(take_split_optional),
+                    split: Split::Optional,
+                });
+            }
+
+            if !take_split_always.is_empty() {
+                rule_set.push(NimRule {
+                    take: TakeSize::List(take_split_always),
+                    split: Split::Always,
+                });
+            }
+
+            for split in allow_any_take {
+                match split {
+                    Split::Never => {
+                        rule_set.push(NimRule {
+                            take: TakeSize::Any,
+                            split: Split::Never,
+                        });
+                    }
+                    Split::Optional => {
+                        rule_set.push(NimRule {
+                            take: TakeSize::Any,
+                            split: Split::Optional,
+                        });
+                    }
+                    Split::Always => {
+                        rule_set.push(NimRule {
+                            take: TakeSize::Any,
+                            split: Split::Always,
+                        });
+                    }
+                }
+            }
+
+            if allow_place {
+                rule_set.push(NimRule {
+                    take: TakeSize::Place,
+                    split: Split::Never,
+                });
+            }
 
             println!(
                 "Made rule set:\n{}",
-                serde_json::to_string_pretty(&rule_set).unwrap()
+                if pretty_print {
+                    serde_json::to_string_pretty(&rule_set).unwrap()
+                } else {
+                    serde_json::to_string(&rule_set).unwrap()
+                }
             );
         }
     }
