@@ -13,6 +13,7 @@
 
 use clap::{Args, Parser, ValueEnum};
 use nimlib::{nimbers, NimRule, Nimber, Split, Stack, TakeSize};
+use serde::Serialize;
 
 #[derive(clap::Parser)]
 #[command(
@@ -44,6 +45,14 @@ enum Action {
         /// Print either the nimbers of the stacks, of the entire position, or both
         #[arg(long, short)]
         print: Option<PrintNimbers>,
+
+        #[arg(long, short)]
+        /// Print the result as JSON
+        json: bool,
+
+        #[arg(long, short = 'J')]
+        /// Pretty-print the JSON output
+        json_pretty: bool,
     },
     #[command(about = "Calculate all possible splits for a given height")]
     Splits {
@@ -82,7 +91,7 @@ struct MakeRuleSet {
     take_split_always: Vec<u64>,
 
     /// Allow for taking arbitrary amounts of coins (split(s): never, optional, always)
-    #[arg(long, short = 's')]
+    #[arg(long, short = 'A')]
     allow_any_take: Option<Split>,
 
     /// Allow for placing arbitrary amounts of coins (to be implemented)
@@ -104,6 +113,8 @@ pub fn main() {
             heights,
             rules,
             print: print_style,
+            json,
+            json_pretty,
         } => {
             let print_style = print_style.unwrap_or_default();
             let rules: Vec<NimRule> = serde_json::from_str(&rules).unwrap();
@@ -112,15 +123,48 @@ pub fn main() {
 
             for height in heights {
                 let nimber = nimbers::calculate_nimber_for_height(height, &rules, 0);
-                if print_style != PrintNimbers::Position {
+                if print_style != PrintNimbers::Position && !json && !json_pretty {
                     println!("Nimber for stack of height {height}: {nimber}");
                 }
                 nimbers.push(nimber);
             }
 
-            if nimbers.len() > 1 && print_style != PrintNimbers::Stacks {
-                let nimber = Nimber(nimbers.iter().fold(0, |acc, x| acc ^ x.0));
+            let nimber = Nimber(nimbers.iter().fold(0, |acc, x| acc ^ x.0));
+
+            if nimbers.len() > 1 && print_style != PrintNimbers::Stacks && !json && !json_pretty {
                 println!("Nimber for the position: {nimber}");
+            }
+
+            #[derive(Serialize)]
+            struct Result {
+                stack_nimbers: Vec<Nimber>,
+                position_nimber: Nimber,
+            }
+
+            if json_pretty {
+                let json = match print_style {
+                    PrintNimbers::Stacks => serde_json::to_string_pretty(&nimbers).unwrap(),
+                    PrintNimbers::Position => serde_json::to_string_pretty(&nimber).unwrap(),
+                    PrintNimbers::Both => serde_json::to_string_pretty(&Result {
+                        stack_nimbers: nimbers,
+                        position_nimber: nimber,
+                    })
+                    .unwrap(),
+                };
+
+                println!("{json}");
+            } else if json {
+                let json = match print_style {
+                    PrintNimbers::Stacks => serde_json::to_string(&nimbers).unwrap(),
+                    PrintNimbers::Position => serde_json::to_string(&nimber).unwrap(),
+                    PrintNimbers::Both => serde_json::to_string(&Result {
+                        stack_nimbers: nimbers,
+                        position_nimber: nimber,
+                    })
+                    .unwrap(),
+                };
+
+                println!("{json}");
             }
         }
         Action::Splits { height, csv } => {

@@ -6,10 +6,25 @@
 
 ### Added
 
-- CLI to access library functions
-- CLI: Calculate splits for a given height (with the `splits` subcommand)
+- CLI to access library functions:
+- Calculate splits for a given height (with the `splits` subcommand)
   - As formatted text (default)
   - As CSV (with the `--csv` flag or `-c` short flag)
+- `--version` and `--help` flags
+- `make-rule-set` subcommand to create a JSON string describing a Nim game's rules
+  - Use `--take-split-never` or `-n` either followed by a number to specify a rule where a player may take a number of coins from a stack without splitting it in the process
+  - Likewise, `--take-split-optional` or `-o` followed by a number specifies a take rule where splitting is optional
+  - The `--take-split-always` or `-a` option followed by a number specifies a take rule where splitting is mandatory
+  - Using `--allow-any-take` or `-A` creates a rule allowing to take an arbitrary number of coins from a stack, followed by a choice from `never`, `optional`, or `always` to specify if splitting is forbidden, optional, or mandatory
+  - The yet-to-be-implemented `--allow-place` or `-p` option creates a rule which allows the player to place coins on a stack; this option is not yet implemented and does not take any arguments
+  - `--pretty-print` or `-P` prints the JSON string in a more readable format, with indentation and line breaks
+- The `nimber` subcommand to
+  - Calculate the nimber(s) for a (set of) stack(s) of given height(s) (using `--print stacks` or `-p stacks`)
+  - Calculate the nimber of a position of stacks (using `--print position` or `-p position`)
+  - Display them both (default, or by using `--print both` or `-p both`)
+  - Rules are taken with the required `--rules` or `-r` flag in the form of a JSON string
+  - The `--json` or `-j` flag can be used to print the output as JSON instead of plain text
+  - Likewise, the `--json-pretty` or `-J` flag can be used to print the output as pretty-printed JSON
 
 ## [0.1.1] - 2023-02-11
 
