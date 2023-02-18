@@ -11,8 +11,8 @@
 
 #![deny(missing_docs, clippy::missing_docs_in_private_items)]
 
-use clap::{Args, Parser};
-use nimlib::{nimbers, NimRule, Split, Stack, TakeSize};
+use clap::{Args, Parser, ValueEnum};
+use nimlib::{nimbers, NimRule, Nimber, Split, Stack, TakeSize};
 
 #[derive(clap::Parser)]
 #[command(about = "A Nim-game CLI", long_about = None)]
@@ -23,15 +23,23 @@ struct Cli {
 
 #[derive(clap::Subcommand)]
 enum Action {
-    #[command(about = "Calculate the nimber for a pile of given height")]
+    #[command(about = "Calculate the nimber for a stack of given height")]
     Nimber {
-        #[arg(help = "Height of the stacks of a position to calculate the nimber for")]
+        /// The heights of the stacks of a position to calculate the nimber for
+        #[arg()]
         heights: Vec<u64>,
 
         // #[arg(long, short = 'r', help = "Use the rules from the given JSON file")]
         // rules_file: Option<String>,
-        #[arg(long, short = 'r', help = "Use the rules from the given JSON string")]
+        /// A JSON string containing the rules to use for the calculation (see `nimlib make-rule-set`)
+        #[arg(long, short)]
         rules: String,
+
+        // #[arg(long, short = 'c', help = "Number of pool coins")]
+        // pool_coins: u64,
+        /// Print either the nimbers of the stacks, of the entire position, or both
+        #[arg(long, short)]
+        print: Option<PrintNimbers>,
     },
     #[command(about = "Calculate all possible splits for a given height")]
     Splits {
@@ -43,6 +51,14 @@ enum Action {
     },
     #[command(about = "Create a JSON rule set using CLI parameters")]
     MakeRuleSet(MakeRuleSet),
+}
+
+#[derive(ValueEnum, Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+enum PrintNimbers {
+    Stacks,
+    Position,
+    #[default]
+    Both,
 }
 
 #[derive(Args)]
@@ -78,8 +94,28 @@ struct MakeRuleSet {
 pub fn main() {
     let args = Cli::parse();
     match args.action {
-        Action::Nimber { heights, rules } => {
-            dbg!(&heights, &rules);
+        Action::Nimber {
+            heights,
+            rules,
+            print: print_style,
+        } => {
+            let print_style = print_style.unwrap_or_default();
+            let rules: Vec<NimRule> = serde_json::from_str(&rules).unwrap();
+
+            let mut nimbers = Vec::new();
+
+            for height in heights {
+                let nimber = nimbers::calculate_nimber_for_height(height, &rules, 0);
+                if print_style != PrintNimbers::Position {
+                    println!("Nimber for stack of height {height}: {nimber}");
+                }
+                nimbers.push(nimber);
+            }
+
+            if nimbers.len() > 1 && print_style != PrintNimbers::Stacks {
+                let nimber = Nimber(nimbers.iter().fold(0, |acc, x| acc ^ x.0));
+                println!("Nimber for the position: {nimber}");
+            }
         }
         Action::Splits { height, csv } => {
             let splits = nimbers::calculate_splits(height);
