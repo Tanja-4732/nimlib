@@ -11,7 +11,11 @@
 
 #![deny(missing_docs, clippy::missing_docs_in_private_items)]
 
-use clap::{Args, Parser, ValueEnum};
+use std::ops::ControlFlow;
+
+use clap::{Args, Parser, Subcommand, ValueEnum};
+use clap_verbosity_flag::Verbosity;
+use log::LevelFilter;
 use nimlib::{nimbers, NimRule, Nimber, Split, Stack, TakeSize};
 use serde::Serialize;
 
@@ -20,13 +24,17 @@ use serde::Serialize;
     about = "A Rust CLI tool for Nim games: calculate nimbers and possible moves",
     version = env!("CARGO_PKG_VERSION"), author = env!("CARGO_PKG_AUTHORS")
 )]
-
+#[derive(Debug)]
 struct Cli {
     #[command(subcommand)]
     action: Action,
+
+    /// Verbosity level (-v, -vv, -vvv, etc.)
+    #[command(flatten)]
+    verbose: Verbosity,
 }
 
-#[derive(clap::Subcommand)]
+#[derive(Subcommand, Debug)]
 enum Action {
     #[command(about = "Calculate the nimber for a stack of given height")]
     Nimber {
@@ -76,7 +84,7 @@ enum PrintNimbers {
     Both,
 }
 
-#[derive(Args)]
+#[derive(Args, Debug, Serialize)]
 struct MakeRuleSet {
     /// A list of heights which remainder cannot be split
     #[arg(long, short = 'n')]
@@ -108,6 +116,22 @@ struct MakeRuleSet {
 /// Parses the CLI arguments and handles the subcommands
 pub fn main() {
     let args = Cli::parse();
+
+    // Set the log level
+    env_logger::builder()
+        .filter_level(
+            args.verbose
+                .log_level()
+                .map(|v| v.to_level_filter())
+                .unwrap_or(log::LevelFilter::Warn),
+        )
+        .init();
+
+    log::info!("nimlib version {}", env!("CARGO_PKG_VERSION"));
+
+    log::trace!("CLI arguments: {:#?}", &args);
+    log::trace!("Log level: {:#?}", &args.verbose.log_level());
+
     match args.action {
         Action::Nimber {
             heights,
@@ -115,150 +139,150 @@ pub fn main() {
             print: print_style,
             json,
             json_pretty,
-        } => {
-            let print_style = print_style.unwrap_or_default();
-            let rules: Vec<NimRule> = serde_json::from_str(&rules).unwrap();
+        } => calculate_nimbers(print_style, rules, heights, json, json_pretty),
+        Action::Splits { height, csv } => calculate_splits(height, csv),
+        Action::MakeRuleSet(options) => make_rule_set(options),
+    }
+}
 
-            let mut nimbers = Vec::new();
-
-            for height in heights {
-                let nimber = nimbers::calculate_nimber_for_height(height, &rules, 0);
-                if print_style != PrintNimbers::Position && !json && !json_pretty {
-                    println!("Nimber for stack of height {height}: {nimber}");
-                }
-                nimbers.push(nimber);
-            }
-
-            let nimber = Nimber(nimbers.iter().fold(0, |acc, x| acc ^ x.0));
-
-            if nimbers.len() > 1 && print_style != PrintNimbers::Stacks && !json && !json_pretty {
-                println!("Nimber for the position: {nimber}");
-            }
-
-            #[derive(Serialize)]
-            struct Result {
-                stack_nimbers: Vec<Nimber>,
-                position_nimber: Nimber,
-            }
-
-            if json_pretty {
-                let json = match print_style {
-                    PrintNimbers::Stacks => serde_json::to_string_pretty(&nimbers).unwrap(),
-                    PrintNimbers::Position => serde_json::to_string_pretty(&nimber).unwrap(),
-                    PrintNimbers::Both => serde_json::to_string_pretty(&Result {
-                        stack_nimbers: nimbers,
-                        position_nimber: nimber,
-                    })
-                    .unwrap(),
-                };
-
-                println!("{json}");
-            } else if json {
-                let json = match print_style {
-                    PrintNimbers::Stacks => serde_json::to_string(&nimbers).unwrap(),
-                    PrintNimbers::Position => serde_json::to_string(&nimber).unwrap(),
-                    PrintNimbers::Both => serde_json::to_string(&Result {
-                        stack_nimbers: nimbers,
-                        position_nimber: nimber,
-                    })
-                    .unwrap(),
-                };
-
-                println!("{json}");
-            }
+fn make_rule_set(
+    MakeRuleSet {
+        take_split_never,
+        take_split_optional,
+        take_split_always,
+        allow_any_take,
+        allow_place,
+        pretty_print,
+    }: MakeRuleSet,
+) {
+    let mut rule_set: Vec<NimRule> = Default::default();
+    if !take_split_never.is_empty() {
+        rule_set.push(NimRule {
+            take: TakeSize::List(take_split_never),
+            split: Split::Never,
+        });
+    }
+    if !take_split_optional.is_empty() {
+        rule_set.push(NimRule {
+            take: TakeSize::List(take_split_optional),
+            split: Split::Optional,
+        });
+    }
+    if !take_split_always.is_empty() {
+        rule_set.push(NimRule {
+            take: TakeSize::List(take_split_always),
+            split: Split::Always,
+        });
+    }
+    match allow_any_take {
+        Some(Split::Never) => {
+            rule_set.push(NimRule {
+                take: TakeSize::Any,
+                split: Split::Never,
+            });
         }
-        Action::Splits { height, csv } => {
-            let splits = nimbers::calculate_splits(height);
-
-            if csv {
-                println!("left,right");
-                for (Stack(left), Stack(right)) in splits {
-                    println!("{left},{right}");
-                }
-                return;
-            }
-
-            if splits.is_empty() {
-                println!("No splits for height {height}");
-                return;
-            }
-
-            println!("Splits for height {height}:");
-
-            let max_digits_left = splits[splits.len() - 1].0 .0.ilog10() as usize + 1;
-            let max_digits_right = splits[0].1 .0.ilog10() as usize + 1;
-
-            for (Stack(left), Stack(right)) in splits {
-                println!("{left:max_digits_left$} + {right:max_digits_right$}");
-            }
+        Some(Split::Optional) => {
+            rule_set.push(NimRule {
+                take: TakeSize::Any,
+                split: Split::Optional,
+            });
         }
-        Action::MakeRuleSet(MakeRuleSet {
-            take_split_never,
-            take_split_optional,
-            take_split_always,
-            allow_any_take,
-            allow_place,
-            pretty_print,
-        }) => {
-            let mut rule_set: Vec<NimRule> = Default::default();
-
-            if !take_split_never.is_empty() {
-                rule_set.push(NimRule {
-                    take: TakeSize::List(take_split_never),
-                    split: Split::Never,
-                });
-            }
-
-            if !take_split_optional.is_empty() {
-                rule_set.push(NimRule {
-                    take: TakeSize::List(take_split_optional),
-                    split: Split::Optional,
-                });
-            }
-
-            if !take_split_always.is_empty() {
-                rule_set.push(NimRule {
-                    take: TakeSize::List(take_split_always),
-                    split: Split::Always,
-                });
-            }
-
-            match allow_any_take {
-                Some(Split::Never) => {
-                    rule_set.push(NimRule {
-                        take: TakeSize::Any,
-                        split: Split::Never,
-                    });
-                }
-                Some(Split::Optional) => {
-                    rule_set.push(NimRule {
-                        take: TakeSize::Any,
-                        split: Split::Optional,
-                    });
-                }
-                Some(Split::Always) => {
-                    rule_set.push(NimRule {
-                        take: TakeSize::Any,
-                        split: Split::Always,
-                    });
-                }
-                None => {}
-            }
-
-            if allow_place {
-                rule_set.push(NimRule {
-                    take: TakeSize::Place,
-                    split: Split::Never,
-                });
-            }
-
-            let rules = if pretty_print {
-                serde_json::to_string_pretty(&rule_set).unwrap()
-            } else {
-                serde_json::to_string(&rule_set).unwrap()
-            };
-
-            println!("{rules}");
+        Some(Split::Always) => {
+            rule_set.push(NimRule {
+                take: TakeSize::Any,
+                split: Split::Always,
+            });
         }
+        None => {}
+    }
+    if allow_place {
+        rule_set.push(NimRule {
+            take: TakeSize::Place,
+            split: Split::Never,
+        });
+    }
+    let rules = if pretty_print {
+        serde_json::to_string_pretty(&rule_set).unwrap()
+    } else {
+        serde_json::to_string(&rule_set).unwrap()
+    };
+    println!("{rules}");
+}
+
+fn calculate_splits(height: u64, csv: bool) {
+    let splits = nimbers::calculate_splits(height);
+    if csv {
+        println!("left,right");
+        for (Stack(left), Stack(right)) in splits {
+            println!("{left},{right}");
+        }
+        return;
+    }
+    if splits.is_empty() {
+        println!("No splits for height {height}");
+        return;
+    }
+    println!("Splits for height {height}:");
+    let max_digits_left = splits[splits.len() - 1].0 .0.ilog10() as usize + 1;
+    let max_digits_right = splits[0].1 .0.ilog10() as usize + 1;
+    for (Stack(left), Stack(right)) in splits {
+        println!("{left:max_digits_left$} + {right:max_digits_right$}");
+    }
+}
+
+fn calculate_nimbers(
+    print_style: Option<PrintNimbers>,
+    rules: String,
+    heights: Vec<u64>,
+    json: bool,
+    json_pretty: bool,
+) {
+    let print_style = print_style.unwrap_or_default();
+    let rules: Vec<NimRule> = serde_json::from_str(&rules).unwrap();
+    let mut nimbers = Vec::new();
+    for height in heights {
+        let nimber = nimbers::calculate_nimber_for_height(height, &rules, 0);
+        if print_style != PrintNimbers::Position && !json && !json_pretty {
+            println!("Nimber for stack of height {height}: {nimber}");
+        }
+        nimbers.push(nimber);
+    }
+    let nimber = Nimber(nimbers.iter().fold(0, |acc, x| acc ^ x.0));
+    if nimbers.len() > 1 && print_style != PrintNimbers::Stacks && !json && !json_pretty {
+        println!("Nimber for the position: {nimber}");
+    }
+    #[derive(Serialize)]
+    struct Result {
+        stack_nimbers: Vec<Nimber>,
+        position_nimber: Nimber,
+    }
+    if json_pretty {
+        let json = match print_style {
+            PrintNimbers::Stacks => serde_json::to_string_pretty(&nimbers).unwrap(),
+            PrintNimbers::Position => serde_json::to_string_pretty(&nimber).unwrap(),
+            PrintNimbers::Both => serde_json::to_string_pretty(&Result {
+                stack_nimbers: nimbers,
+                position_nimber: nimber,
+            })
+            .unwrap(),
+        };
+
+        println!("{json}");
+    } else if json {
+        let json = match print_style {
+            PrintNimbers::Stacks => serde_json::to_string(&nimbers).unwrap(),
+            PrintNimbers::Position => serde_json::to_string(&nimber).unwrap(),
+            PrintNimbers::Both => serde_json::to_string(&Result {
+                stack_nimbers: nimbers,
+                position_nimber: nimber,
+            })
+            .unwrap(),
+        };
+
+        println!("{json}");
+    }
+
+    if json && json_pretty {
+        log::warn!("--json and --json-pretty are mutually exclusive. Ignoring --json.");
     }
 }

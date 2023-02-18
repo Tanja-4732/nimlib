@@ -21,3 +21,6 @@ serde = { version = "1.0.152", features = ["std", "serde_derive"] }
 # Dependencies for the CLI
 clap = { version = "4.1.4", features = ["derive", "wrap_help"] }
 serde_json = "1.0.93"
+clap-verbosity-flag = "2.0.0"
+log = "0.4.17"
+env_logger = "0.10.0"
