@@ -15,7 +15,11 @@ use clap::{Args, Parser, ValueEnum};
 use nimlib::{nimbers, NimRule, Nimber, Split, Stack, TakeSize};
 
 #[derive(clap::Parser)]
-#[command(about = "A Nim-game CLI", long_about = None)]
+#[command(
+    about = "A Rust CLI tool for Nim games: calculate nimbers and possible moves",
+    version = env!("CARGO_PKG_VERSION"), author = env!("CARGO_PKG_AUTHORS")
+)]
+
 struct Cli {
     #[command(subcommand)]
     action: Action,
@@ -43,10 +47,12 @@ enum Action {
     },
     #[command(about = "Calculate all possible splits for a given height")]
     Splits {
-        #[arg(help = "Height of the stack to calculate splits for")]
+        /// Height of the stack to calculate splits for
+        #[arg()]
         height: u64,
 
-        #[arg(short, long, help = "Output as CSV")]
+        /// Print the splits as a CSV (with commas, newlines, and a header)
+        #[arg(short, long)]
         csv: bool,
     },
     #[command(about = "Create a JSON rule set using CLI parameters")]
