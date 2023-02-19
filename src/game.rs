@@ -1,5 +1,5 @@
 //! The primary game structs are in this module;  
-//! For game logic, see [crate::nimbers].
+//! For game logic, see [`crate::nimbers`].
 
 use std::{
     fmt::{Debug, Display},
@@ -13,8 +13,9 @@ use crate::nimbers;
 
 /// # A Nim game
 ///
-/// This struct uses [NimRule]s to calculate the nimber of the position.
+/// This struct uses [`NimRule`]s to calculate the nimber of the position.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[allow(clippy::module_name_repetitions)]
 pub struct NimGame {
     /// The rules of the game (e.g. which numbers of coins can be taken)
     pub(crate) rules: Vec<NimRule>,
@@ -35,6 +36,7 @@ impl NimGame {
     /// Get the stacks currently in the game
     ///
     /// Retrieves the position as a shared reference to vector of [Stack]s.
+    #[must_use]
     pub fn get_stacks(&self) -> &Vec<Stack> {
         &self.stacks
     }
@@ -71,6 +73,7 @@ impl NimGame {
     ///
     /// let game = NimGame::new(simple_rules, stacks);
     /// ```
+    #[must_use]
     pub fn new(rules: Vec<NimRule>, stacks: Vec<Stack>) -> Self {
         // TODO allow pool coins to be set
 
@@ -82,6 +85,7 @@ impl NimGame {
     }
 
     /// Calculate the nimber of the position using the MEX & XOR rules
+    #[must_use]
     pub fn calculate_nimber(&self) -> Nimber {
         // FIXME handle pool coins
 
@@ -233,9 +237,9 @@ pub struct PlaceAction {
     pub amount: u64,
 }
 
-/// Represents a possible split of a stack into two non-empty stacks in a [NimAction::Take] move
+/// Represents a possible split of a stack into two non-empty stacks in a [`NimAction::Take`] move
 ///
-/// This struct represents the resulting split (if any) of a stack after a [TakeAction] is applied.
+/// This struct represents the resulting split (if any) of a stack after a [`TakeAction`] is applied.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum NimSplit {
     /// The resulting stacks after a split

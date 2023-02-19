@@ -9,13 +9,11 @@
 //! nimlib make-rule-set --help
 //! ```
 
-#![deny(missing_docs, clippy::missing_docs_in_private_items)]
-
-use std::ops::ControlFlow;
+#![deny(missing_docs)]
+#![warn(clippy::pedantic)]
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use clap_verbosity_flag::Verbosity;
-use log::LevelFilter;
 use nimlib::{nimbers, NimRule, Nimber, Split, Stack, TakeSize};
 use serde::Serialize;
 
@@ -122,8 +120,7 @@ pub fn main() {
         .filter_level(
             args.verbose
                 .log_level()
-                .map(|v| v.to_level_filter())
-                .unwrap_or(log::LevelFilter::Warn),
+                .map_or(log::LevelFilter::Warn, |v| v.to_level_filter()),
         )
         .init();
 
@@ -139,7 +136,7 @@ pub fn main() {
             print: print_style,
             json,
             json_pretty,
-        } => calculate_nimbers(print_style, rules, heights, json, json_pretty),
+        } => calculate_nimbers(print_style, &rules, heights, json, json_pretty),
         Action::Splits { height, csv } => calculate_splits(height, csv),
         Action::MakeRuleSet(options) => make_rule_set(options),
     }
@@ -155,7 +152,7 @@ fn make_rule_set(
         pretty_print,
     }: MakeRuleSet,
 ) {
-    let mut rule_set: Vec<NimRule> = Default::default();
+    let mut rule_set = Vec::new();
     if !take_split_never.is_empty() {
         rule_set.push(NimRule {
             take: TakeSize::List(take_split_never),
@@ -232,13 +229,20 @@ fn calculate_splits(height: u64, csv: bool) {
 
 fn calculate_nimbers(
     print_style: Option<PrintNimbers>,
-    rules: String,
+    rules: &str,
     heights: Vec<u64>,
     json: bool,
     json_pretty: bool,
 ) {
+    /// For JSON output
+    #[derive(Serialize)]
+    struct Result {
+        stack_nimbers: Vec<Nimber>,
+        position_nimber: Nimber,
+    }
+
     let print_style = print_style.unwrap_or_default();
-    let rules: Vec<NimRule> = serde_json::from_str(&rules).unwrap();
+    let rules: Vec<NimRule> = serde_json::from_str(rules).unwrap();
     let mut nimbers = Vec::new();
     for height in heights {
         let nimber = nimbers::calculate_nimber_for_height(height, &rules, 0);
@@ -251,11 +255,7 @@ fn calculate_nimbers(
     if nimbers.len() > 1 && print_style != PrintNimbers::Stacks && !json && !json_pretty {
         println!("Nimber for the position: {nimber}");
     }
-    #[derive(Serialize)]
-    struct Result {
-        stack_nimbers: Vec<Nimber>,
-        position_nimber: Nimber,
-    }
+
     if json_pretty {
         let json = match print_style {
             PrintNimbers::Stacks => serde_json::to_string_pretty(&nimbers).unwrap(),

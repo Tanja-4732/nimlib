@@ -27,6 +27,10 @@
   - Likewise, the `--json-pretty` or `-J` flag can be used to print the output as pretty-printed JSON
 - Logging support with verbosity controls using `--verbose` or `-v` (can be used multiple times), or `--quiet` or `-q` (can be used multiple times)
 
+### Changed
+
+- Applied many `clippy` suggestions
+
 ## [0.1.1] - 2023-02-11
 
 ### Changed

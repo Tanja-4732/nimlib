@@ -3,7 +3,7 @@
 //! Useful if you want to calculate nimbers for heights that are not part of a game,
 //! or if you want to include just the lower-level nimber calculation algorithms in your project.
 //!
-//! Includes helper functions like [calculate_splits].
+//! Includes helper functions like [`calculate_splits`].
 
 use std::{collections::HashMap, sync::RwLock};
 
@@ -11,7 +11,7 @@ use lazy_static::lazy_static;
 
 use crate::{game::NimRule, moves, NimAction, NimSplit, Nimber, PlaceAction, Stack, TakeAction};
 
-/// The nimber cache is a map from (height, pool_coins) to nimber.
+/// The nimber cache is a map from (`height`, `pool_coins`) to nimber.
 ///
 /// It is only valid for a specific set of rules.
 ///
@@ -53,6 +53,7 @@ lazy_static! {
 /// assert_eq!(calculate_splits(5), vec![(Stack(1), Stack(4)), (Stack(2), Stack(3))]);
 /// assert_eq!(calculate_splits(6), vec![(Stack(1), Stack(5)), (Stack(2), Stack(4)), (Stack(3), Stack(3))]);
 /// ```
+#[must_use]
 pub fn calculate_splits(height: u64) -> Vec<(Stack, Stack)> {
     let mut splits = Vec::new();
 
@@ -110,7 +111,11 @@ fn with_cache<T, F: FnOnce(&mut NimberCache) -> T>(rules: &[NimRule], f: F) -> T
 /// are stored in an _exclusion list_. The nimber of the original stack is the smallest non-negative
 /// integer that is not in the exclusion list.
 ///
+/// # Panics
 ///
+/// Panics if `rules` match a [`NimAction::Place`] action.
+///
+#[must_use]
 pub fn calculate_nimber_for_height(height: u64, rules: &[NimRule], pool_coins: u64) -> Nimber {
     // Check if we've already calculated this nimber
     // if let Some(nimber) = get_cache_for_rules!(rules).get(&(height, pool_coins)) {
