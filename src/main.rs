@@ -44,7 +44,7 @@ enum Action {
         // rules_file: Option<String>,
         /// A JSON string containing the rules to use for the calculation (see `nimlib make-rule-set`)
         #[arg(long, short)]
-        rules: String,
+        rules: GameRules,
 
         // #[arg(long, short = 'c', help = "Number of pool coins")]
         // pool_coins: u64,
@@ -74,6 +74,16 @@ enum Action {
     MakeRuleSet(MakeRuleSet),
 }
 
+#[derive(Debug, Clone)]
+enum GameRules {
+    /// Use the rules from the given JSON file
+    File(String),
+    /// Use the rules from the given JSON string
+    String(String),
+    /// Specify directly
+    Rules(MakeRuleSet),
+}
+
 #[derive(ValueEnum, Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum PrintNimbers {
     Stacks,
@@ -82,7 +92,7 @@ enum PrintNimbers {
     Both,
 }
 
-#[derive(Args, Debug, Serialize)]
+#[derive(Args, Debug, Serialize, Clone)]
 struct MakeRuleSet {
     /// A list of heights which remainder cannot be split
     #[arg(long, short = 'n')]
