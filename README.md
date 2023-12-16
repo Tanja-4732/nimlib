@@ -2,11 +2,11 @@
 
 [![github]](https://github.com/Tanja-4732/nimlib)&ensp;[![crates-io]](https://crates.io/crates/nimlib)&ensp;[![docs-rs]](https://docs.rs/nimlib/latest/nimlib)
 
-A Rust library for [Nim games](wiki-nim): calculate nimbers and possible moves
+A Rust library for [Nim games](https://en.wikipedia.org/wiki/Nim): calculate nimbers and possible moves
 
 ## A game called Nim
 
-[_Nim_](wiki-nim) refers to a set of (mathematical/strategy) games where two players take turns in removing coins from stacks of coins.
+[_Nim_](https://en.wikipedia.org/wiki/Nim) refers to a set of (mathematical/strategy) games where two players take turns in removing coins from stacks of coins.
 The player who makes the last legal move wins.
 
 Every Nim game consists of a set of rules, which define how many coins may be removed from a stack in a single move.
@@ -49,4 +49,3 @@ You should have received a copy of the [GNU Lesser General Public License](/LICE
 [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github
 [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
 [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs
-[wiki-nim]: https://en.wikipedia.org/wiki/Nim
