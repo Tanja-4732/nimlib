@@ -138,8 +138,12 @@ pub fn calculate_nimber_for_height(height: u64, rules: &[NimRule], pool_coins: u
                 stack_index: _,
                 amount: take,
                 split,
+                from: _,
             }) => match split {
                 NimSplit::Yes(a, b) => {
+                    // TODO check if this handles pool coins correctly
+                    //  note: probably yes, since we'd want to avoid infinite recursion
+                    //  more notes: we're probably missing cases where we could re-distribute coins from one stack to another
                     let nimber_a = calculate_nimber_for_height(a.0, rules, pool_coins);
                     let nimber_b = calculate_nimber_for_height(b.0, rules, pool_coins);
                     exclusion_list.push(nimber_a ^ nimber_b);
@@ -150,9 +154,15 @@ pub fn calculate_nimber_for_height(height: u64, rules: &[NimRule], pool_coins: u
                 }
             },
             NimAction::Place(PlaceAction {
-                stack_index: _,
-                amount: _,
-            }) => todo!("Place action for nimber calculation"),
+                stack_index,
+                amount,
+                from: _,
+            }) => {
+                // We set the `pool_coins` to 0, since we don't want to get into an infinite loop
+                // TODO check if that's correct
+                let nimber = calculate_nimber_for_height(height + amount, rules, 0);
+                exclusion_list.push(nimber);
+            }
         }
     }
 

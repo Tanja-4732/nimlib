@@ -222,6 +222,9 @@ pub struct TakeAction {
 
     /// If (and possibly how) the stack should be split after taking coins
     pub split: NimSplit,
+
+    /// If you play with `Place` rule(s), this is the player who obtained the coins they are taking
+    pub from: Option<Player>,
 }
 
 /// A move which places coins onto a stack from the player's pool
@@ -235,6 +238,9 @@ pub struct PlaceAction {
     /// The number of coins to place onto the stack,  
     /// taken from the player's pool
     pub amount: u64,
+
+    /// The player from whose pool the coins are taken from
+    pub from: Player,
 }
 
 /// Represents a possible split of a stack into two non-empty stacks in a [`NimAction::Take`] move
@@ -247,4 +253,16 @@ pub enum NimSplit {
 
     /// The stack was not split
     No,
+}
+
+/// A player in a game of Nim, either A or B
+///
+/// Useful for specifying from which player's pool coins are taken/placed
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub enum Player {
+    /// The first player
+    A,
+
+    /// The second player
+    B,
 }

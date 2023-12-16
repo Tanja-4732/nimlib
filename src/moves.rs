@@ -9,8 +9,8 @@ use std::{error::Error, fmt::Display};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    nimbers::calculate_splits, NimAction, NimGame, NimRule, NimSplit, PlaceAction, Split, Stack,
-    TakeAction, TakeSize,
+    nimbers::calculate_splits, NimAction, NimGame, NimRule, NimSplit, PlaceAction, Player, Split,
+    Stack, TakeAction, TakeSize,
 };
 
 /// Errors which may occur when applying a move
@@ -26,13 +26,16 @@ pub enum MoveError {
     NoSuchStack,
 
     /// The stack does not have enough coins to take (before a possible split)
-    NotEnoughCoins,
+    NotEnoughCoinsOnStack,
 
     /// No rule exists which supports the desired move
     NoSuchRule,
 
     /// The split is invalid for the given move under ever rule in the specified game
     InvalidSplit,
+
+    /// Player does not have enough coins to place (for [`NimAction::Place`] moves)
+    NotEnoughCoinsOnPlayer,
 }
 
 impl Display for MoveError {
@@ -40,9 +43,14 @@ impl Display for MoveError {
         match self {
             MoveError::InvalidMove => write!(f, "The move is invalid for the given position"),
             MoveError::NoSuchStack => write!(f, "The stack index is out of bounds"),
-            MoveError::NotEnoughCoins => write!(f, "The stack does not have enough coins to take"),
+            MoveError::NotEnoughCoinsOnStack => {
+                write!(f, "The stack does not have enough coins to take")
+            }
             MoveError::NoSuchRule => write!(f, "No rule exists which supports the desired move"),
             MoveError::InvalidSplit => write!(f, "The split is invalid for the given move"),
+            MoveError::NotEnoughCoinsOnPlayer => {
+                write!(f, "Player does not have enough coins to place")
+            }
         }
     }
 }
@@ -61,6 +69,7 @@ pub fn check_move(game: &NimGame, mov: &NimAction) -> Result<(), MoveError> {
             stack_index,
             amount,
             split,
+            from: _, // Don't need to check this field for `Take` moves
         }) => {
             // Get the stack to take coins from
             let stack = game
@@ -90,7 +99,7 @@ pub fn check_move(game: &NimGame, mov: &NimAction) -> Result<(), MoveError> {
 
             // Check if the stack has enough coins to take
             if stack.0 < *amount {
-                return Err(MoveError::NotEnoughCoins);
+                return Err(MoveError::NotEnoughCoinsOnStack);
             }
 
             // Check if the move is valid for at least one rule (splitting)
@@ -138,15 +147,30 @@ pub fn check_move(game: &NimGame, mov: &NimAction) -> Result<(), MoveError> {
         }
         NimAction::Place(PlaceAction {
             stack_index,
-            amount: _,
+            amount,
+            from,
         }) => {
+            if game.rules.iter().all(|rule| rule.take != TakeSize::Place) {
+                return Err(MoveError::NoSuchRule);
+            }
+
             // Get the stack to place coins onto
-            let _stack = game
+            let stack = game
                 .stacks
                 .get(*stack_index)
                 .ok_or(MoveError::NoSuchStack)?;
 
-            return Err(MoveError::InvalidMove);
+            // Check if the player has sufficient coins to place
+            let player_coins = match from {
+                crate::Player::A => game.coins_a,
+                crate::Player::B => game.coins_b,
+            };
+
+            if player_coins < *amount {
+                return Err(MoveError::NotEnoughCoinsOnStack);
+            }
+
+            return Ok(());
         }
     }
 
@@ -165,6 +189,7 @@ fn apply_move_(game: &mut NimGame, mov: &NimAction, unchecked: bool) -> Result<(
             stack_index,
             amount,
             split,
+            from,
         }) => {
             // Get the stack to take coins from
             let stack = game
@@ -182,10 +207,23 @@ fn apply_move_(game: &mut NimGame, mov: &NimAction, unchecked: bool) -> Result<(
                 game.stacks
                     .splice(*stack_index..=*stack_index, [*a, *b].into_iter());
             }
+
+            if let Some(player) = from {
+                // Remove coins from the player's pool
+                match player {
+                    crate::Player::A => {
+                        game.coins_a = game.coins_a.checked_add(*amount).expect("Coin overflow")
+                    }
+                    crate::Player::B => {
+                        game.coins_b = game.coins_b.checked_add(*amount).expect("Coin overflow")
+                    }
+                };
+            }
         }
         NimAction::Place(PlaceAction {
             stack_index,
             amount,
+            from,
         }) => {
             // Get the stack to place coins onto
             let stack = game
@@ -195,6 +233,20 @@ fn apply_move_(game: &mut NimGame, mov: &NimAction, unchecked: bool) -> Result<(
 
             // Place coins onto the stack
             stack.0 += amount;
+
+            // Remove coins from the player's pool
+            match from {
+                crate::Player::A => {
+                    game.coins_a = game.coins_a.checked_sub(*amount).expect(
+                        "Coin underflow; this should not happen, as the move was checked before",
+                    )
+                }
+                crate::Player::B => {
+                    game.coins_b = game.coins_b.checked_sub(*amount).expect(
+                        "Coin underflow; this should not happen, as the move was checked before",
+                    )
+                }
+            };
         }
     }
 
@@ -311,7 +363,7 @@ pub unsafe fn apply_move_unchecked(game: &mut NimGame, mov: &NimAction) -> Resul
 pub fn calculate_legal_moves(
     stacks: &[Stack],
     rules: &[NimRule],
-    (pool_coins_a, _pool_coins_b): (u64, u64),
+    (pool_coins_a, pool_coins_b): (u64, u64),
 ) -> Vec<NimAction> {
     let mut moves = Vec::new();
 
@@ -330,6 +382,7 @@ pub fn calculate_legal_moves(
                                         stack_index: s_idx,
                                         amount: *take_size,
                                         split: NimSplit::No,
+                                        from: None,
                                     }));
                                 }
                                 Split::Optional => {
@@ -338,6 +391,7 @@ pub fn calculate_legal_moves(
                                         stack_index: s_idx,
                                         amount: *take_size,
                                         split: NimSplit::No,
+                                        from: None,
                                     }));
 
                                     // With split
@@ -349,6 +403,7 @@ pub fn calculate_legal_moves(
                                             stack_index: s_idx,
                                             amount: *take_size,
                                             split: NimSplit::Yes(a, b),
+                                            from: None,
                                         }));
                                     }
                                 }
@@ -362,6 +417,7 @@ pub fn calculate_legal_moves(
                                             stack_index: s_idx,
                                             amount: *take_size,
                                             split: NimSplit::Yes(a, b),
+                                            from: None,
                                         }));
                                     }
                                 }
@@ -379,6 +435,7 @@ pub fn calculate_legal_moves(
                                     stack_index: s_idx,
                                     amount: h,
                                     split: NimSplit::No,
+                                    from: None,
                                 }));
                             }
                             Split::Optional => {
@@ -387,6 +444,7 @@ pub fn calculate_legal_moves(
                                     stack_index: s_idx,
                                     amount: h,
                                     split: NimSplit::No,
+                                    from: None,
                                 }));
 
                                 // With split
@@ -396,6 +454,7 @@ pub fn calculate_legal_moves(
                                         stack_index: s_idx,
                                         amount: h,
                                         split: NimSplit::Yes(a, b),
+                                        from: None,
                                     }));
                                 }
                             }
@@ -407,6 +466,7 @@ pub fn calculate_legal_moves(
                                         stack_index: s_idx,
                                         amount: h,
                                         split: NimSplit::Yes(a, b),
+                                        from: None,
                                     }));
                                 }
                             }
@@ -425,6 +485,23 @@ pub fn calculate_legal_moves(
                                 moves.push(NimAction::Place(PlaceAction {
                                     stack_index: s_idx,
                                     amount: c,
+                                    from: Player::A,
+                                }));
+                            }
+                            Split::Optional | Split::Always => {
+                                // TODO consider replacing this panic with a Result or improve the types themselves
+                                panic!("Split is not allowed with Place")
+                            }
+                        }
+                    }
+                    for c in 1..=pool_coins_b {
+                        match split {
+                            Split::Never => {
+                                // Without split
+                                moves.push(NimAction::Place(PlaceAction {
+                                    stack_index: s_idx,
+                                    amount: c,
+                                    from: Player::B,
                                 }));
                             }
                             Split::Optional | Split::Always => {
